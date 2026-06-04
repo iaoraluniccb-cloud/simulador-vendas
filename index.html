@@ -1,0 +1,1678 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador de Vendas — Athena</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦷</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+SC:wght@300;400;600&family=Josefin+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --vinho:   #8B2D42;
+  --vinho-p: #6A1F30;
+  --vinho-c: #B85C72;
+  --cobre:   #C4955A;
+  --cobre-c: #DFB07A;
+  --marfim:  #FDF9F4;
+  --creme:   #F5EDE2;
+  --blush:   #EDDDD4;
+  --warm:    #E0C9B8;
+  --moka:    #3D2A20;
+  --tinta:   #1A0F0A;
+  --verde:   #22c55e;
+  --amarelo: #f59e0b;
+  --radius:  14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Josefin Sans',sans-serif;background:var(--marfim);color:var(--tinta);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* HEADER */
+header{background:linear-gradient(135deg,var(--vinho-p),var(--vinho));color:#fff;padding:13px 28px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 3px 20px rgba(106,31,48,.4);z-index:10;flex-shrink:0}
+header h1{font-family:'Cormorant SC',serif;font-size:1.35rem;font-weight:400;letter-spacing:.18em}
+header h1 span{color:var(--cobre-c);font-style:italic}
+.hdr-badge{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:4px 14px;font-size:.7rem;letter-spacing:.12em;color:var(--warm)}
+
+/* TABS */
+.tabs{display:flex;background:var(--vinho-p);flex-shrink:0}
+.tab{padding:11px 26px;font-size:.76rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;color:rgba(255,255,255,.55);border-bottom:3px solid transparent;transition:all .2s;user-select:none}
+.tab:hover{color:rgba(255,255,255,.85)}
+.tab.active{color:#fff;border-bottom-color:var(--cobre);background:rgba(255,255,255,.07)}
+
+/* LAYOUT */
+.app{display:flex;flex:1;overflow:hidden}
+.panel{display:none;flex:1;overflow:hidden}
+.panel.active{display:flex}
+
+/* SIDEBAR */
+.sidebar{width:290px;min-width:290px;background:#fff;border-right:1px solid var(--blush);display:flex;flex-direction:column;box-shadow:2px 0 12px rgba(106,31,48,.06)}
+.sidebar-header{padding:16px 18px 12px;border-bottom:1px solid var(--blush)}
+.sidebar-header h2{font-family:'Cormorant SC',serif;font-size:.9rem;letter-spacing:.14em;color:var(--vinho)}
+.sidebar-header small{font-size:.67rem;color:#aaa;letter-spacing:.08em;display:block;margin-top:2px}
+
+/* Scenario list */
+.scenario-section{padding:14px 12px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:7px}
+.scenario-section::-webkit-scrollbar{width:4px}
+.scenario-section::-webkit-scrollbar-thumb{background:var(--warm);border-radius:3px}
+.scenario-btn{padding:11px 14px;border:1.5px solid var(--blush);border-radius:11px;background:var(--creme);cursor:pointer;font-family:'Josefin Sans',sans-serif;font-size:.76rem;text-align:left;transition:all .2s;line-height:1.4}
+.scenario-btn:hover{border-color:var(--cobre);background:#fff;box-shadow:0 2px 8px rgba(196,149,90,.15)}
+.scenario-btn.selected{border-color:var(--vinho);background:rgba(139,45,66,.05);font-weight:600}
+.scenario-btn strong{display:block;color:var(--tinta);margin-bottom:3px}
+.scenario-btn .s-queixa{font-size:.69rem;color:#999;line-height:1.3}
+.scenario-btn .s-diff{font-size:.63rem;letter-spacing:.08em;margin-top:4px;font-weight:600}
+.diff-facil{color:var(--verde)}
+.diff-medio{color:var(--amarelo)}
+.diff-dificil{color:#ef4444}
+
+/* Hidden profile banner */
+.hidden-profile-banner{margin:0 12px 4px;background:linear-gradient(135deg,rgba(196,149,90,.12),rgba(139,45,66,.08));border:1px dashed rgba(196,149,90,.5);border-radius:10px;padding:10px 14px;font-size:.72rem;color:var(--moka);text-align:center;line-height:1.5}
+.hidden-profile-banner strong{display:block;font-size:.75rem;color:var(--vinho);margin-bottom:2px}
+
+.start-btn{margin:10px 12px 14px;background:linear-gradient(135deg,var(--vinho-p),var(--vinho));color:#fff;border:none;border-radius:var(--radius);padding:13px;font-family:'Josefin Sans',sans-serif;font-size:.8rem;font-weight:600;letter-spacing:.1em;cursor:pointer;transition:all .2s;box-shadow:0 3px 12px rgba(106,31,48,.3)}
+.start-btn:hover{transform:translateY(-1px);box-shadow:0 5px 16px rgba(106,31,48,.35)}
+.start-btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+
+/* CHAT AREA */
+.chat-area{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--marfim)}
+.chat-topbar{padding:12px 20px;background:#fff;border-bottom:1px solid var(--blush);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.patient-info{display:flex;align-items:center;gap:11px}
+.patient-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--vinho-p),var(--vinho));display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+.patient-name{font-weight:600;font-size:.88rem;color:var(--tinta)}
+.patient-scenario{font-size:.7rem;color:var(--vinho);margin-top:2px;letter-spacing:.04em}
+.chat-actions{display:flex;gap:8px;align-items:center}
+.end-btn{padding:6px 14px;background:transparent;border:1.5px solid var(--vinho-c);border-radius:20px;font-family:'Josefin Sans',sans-serif;font-size:.7rem;font-weight:600;color:var(--vinho);cursor:pointer;transition:all .2s;letter-spacing:.06em}
+.end-btn:hover{background:var(--vinho);color:#fff;border-color:var(--vinho)}
+
+/* MESSAGES */
+.messages{flex:1;overflow-y:auto;padding:18px 20px;display:flex;flex-direction:column;gap:12px}
+.messages::-webkit-scrollbar{width:5px}
+.messages::-webkit-scrollbar-thumb{background:var(--warm);border-radius:4px}
+
+.msg{display:flex;gap:9px;max-width:78%;animation:fadeUp .28s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+.msg.patient{align-self:flex-start}
+.msg.user{align-self:flex-end;flex-direction:row-reverse}
+.msg-av{width:33px;height:33px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.85rem;margin-top:2px}
+.msg.patient .msg-av{background:linear-gradient(135deg,var(--vinho-p),var(--vinho));color:#fff}
+.msg.user .msg-av{background:linear-gradient(135deg,var(--cobre),var(--cobre-c));color:#fff}
+.msg-bubble{padding:10px 13px;border-radius:16px;font-size:.82rem;line-height:1.56;position:relative}
+.msg.patient .msg-bubble{background:#fff;border:1px solid var(--blush);border-top-left-radius:4px}
+.msg.user .msg-bubble{background:linear-gradient(135deg,var(--vinho-p),var(--vinho));color:#fff;border-top-right-radius:4px}
+.msg-time{font-size:.6rem;opacity:.5;margin-top:3px;display:block}
+
+/* Chat text bubbles */
+.msg-text{font-size:.84rem;line-height:1.6}
+
+/* MIC BUTTON */
+.mic-btn{
+  width:42px;height:42px;border-radius:50%;border:none;
+  background:#fff;border:2px solid var(--blush);
+  color:var(--moka);cursor:pointer;display:flex;align-items:center;
+  justify-content:center;transition:all .2s;flex-shrink:0;font-size:1.1rem
+}
+.mic-btn:hover{border-color:var(--vinho);color:var(--vinho)}
+.mic-btn.recording{
+  background:var(--vinho);border-color:var(--vinho);color:#fff;
+  animation:mic-pulse 1s infinite
+}
+@keyframes mic-pulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(139,45,66,.4)}
+  50%{box-shadow:0 0 0 8px rgba(139,45,66,0)}
+}
+.mic-status{
+  font-size:.7rem;color:var(--vinho);text-align:center;
+  padding:4px 18px 0;min-height:18px;letter-spacing:.04em;font-style:italic
+}
+
+/* System / typing */
+.msg-system{align-self:center;background:rgba(196,149,90,.11);border:1px solid rgba(196,149,90,.28);border-radius:20px;padding:5px 15px;font-size:.68rem;color:var(--moka);letter-spacing:.06em;margin:2px 0}
+.typing{align-self:flex-start;display:flex;gap:9px;align-items:flex-end}
+.typing-bubble{background:#fff;border:1px solid var(--blush);border-radius:16px;border-top-left-radius:4px;padding:11px 15px;display:flex;gap:5px;align-items:center}
+.typing-dot{width:7px;height:7px;border-radius:50%;background:var(--vinho-c);animation:bounce .9s infinite}
+.typing-dot:nth-child(2){animation-delay:.15s}
+.typing-dot:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+
+/* BOTTOM AREA */
+.bottom-area{background:#fff;border-top:1px solid var(--blush);flex-shrink:0}
+.quick-replies{display:flex;gap:7px;flex-wrap:wrap;padding:10px 18px 8px}
+.qr{padding:6px 13px;border:1.5px solid var(--vinho);border-radius:20px;font-size:.71rem;color:var(--vinho);cursor:pointer;font-family:'Josefin Sans',sans-serif;font-weight:600;letter-spacing:.05em;transition:all .2s;white-space:nowrap;background:#fff}
+.qr:hover{background:var(--vinho);color:#fff}
+
+.eval-opts-row{padding:8px 18px 6px;display:flex;gap:7px;flex-wrap:wrap}
+.eval-opts-label{font-size:.66rem;text-transform:uppercase;letter-spacing:.1em;color:#bbb;padding:0 18px 4px;width:100%}
+.topt{padding:7px 13px;border:1.5px solid var(--blush);border-radius:10px;font-size:.74rem;cursor:pointer;font-family:'Josefin Sans',sans-serif;font-weight:600;color:var(--moka);transition:all .2s;background:#fff}
+.topt:hover{border-color:var(--cobre);color:var(--vinho)}
+.topt.selected{border-color:var(--vinho);background:rgba(139,45,66,.06);color:var(--vinho)}
+
+.input-bar{padding:10px 18px 14px;display:flex;gap:9px;align-items:flex-end}
+.msg-input{width:100%;padding:11px 16px;border:1.5px solid var(--blush);border-radius:22px;font-family:'Josefin Sans',sans-serif;font-size:.82rem;background:var(--creme);color:var(--tinta);outline:none;resize:none;transition:border-color .2s;max-height:90px;overflow-y:auto}
+.msg-input:focus{border-color:var(--vinho)}
+.msg-input::placeholder{color:#ccc}
+.send-btn{width:42px;height:42px;border-radius:50%;border:none;background:linear-gradient(135deg,var(--vinho-p),var(--vinho));color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;box-shadow:0 2px 8px rgba(106,31,48,.3)}
+.send-btn:hover{transform:scale(1.08)}
+
+/* STAGE STEPPER */
+.stage-stepper{display:flex;align-items:center;padding:10px 16px 8px;background:#fff;border-bottom:1px solid var(--blush);flex-shrink:0;gap:0;overflow-x:auto}
+.stage-step{display:flex;align-items:center;flex:1;min-width:0}
+.stage-dot{width:28px;height:28px;border-radius:50%;border:2px solid var(--blush);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#bbb;background:#fff;flex-shrink:0;transition:all .3s}
+.stage-step.done .stage-dot{background:var(--verde);border-color:var(--verde);color:#fff}
+.stage-step.active .stage-dot{background:var(--vinho);border-color:var(--vinho);color:#fff;box-shadow:0 0 0 3px rgba(139,45,66,.2)}
+.stage-label{font-size:.62rem;font-weight:600;letter-spacing:.08em;color:#bbb;margin-left:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .3s}
+.stage-step.active .stage-label{color:var(--vinho)}
+.stage-step.done .stage-label{color:var(--verde)}
+.stage-line{flex:1;height:2px;background:var(--blush);margin:0 4px;flex-shrink:0;transition:background .3s}
+.stage-step.done + .stage-step .stage-line, .stage-line.done{background:var(--verde)}
+.stage-banner{margin:8px 16px 4px;background:linear-gradient(135deg,rgba(139,45,66,.06),rgba(196,149,90,.08));border:1px solid rgba(196,149,90,.25);border-radius:10px;padding:10px 14px;font-size:.76rem;color:var(--moka);line-height:1.4;flex-shrink:0}
+.stage-banner strong{color:var(--vinho);font-size:.78rem}
+
+/* EMPTY */
+.empty-chat{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#ccc;padding:40px}
+.empty-chat .big-icon{font-size:2.8rem;opacity:.35}
+.empty-chat p{font-size:.8rem;text-align:center;line-height:1.6;max-width:260px}
+
+/* ── SCORE OVERLAY ─────────────────────────────── */
+.score-overlay{position:fixed;inset:0;background:rgba(26,15,10,.7);backdrop-filter:blur(5px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+.score-overlay.show{display:flex}
+.score-card{background:var(--marfim);border-radius:22px;padding:32px 36px;max-width:580px;width:100%;box-shadow:0 10px 48px rgba(106,31,48,.35);animation:scaleIn .3s ease;max-height:90vh;overflow-y:auto}
+.score-card::-webkit-scrollbar{width:4px}
+.score-card::-webkit-scrollbar-thumb{background:var(--warm);border-radius:3px}
+@keyframes scaleIn{from{transform:scale(.88);opacity:0}to{transform:scale(1);opacity:1}}
+.score-title{font-family:'Cormorant SC',serif;font-size:1.5rem;color:var(--vinho);letter-spacing:.12em;text-align:center;margin-bottom:3px}
+.score-subtitle{text-align:center;font-size:.72rem;color:#bbb;letter-spacing:.1em;margin-bottom:20px}
+
+/* Revealed profile */
+.revealed-profile{background:linear-gradient(135deg,rgba(139,45,66,.08),rgba(196,149,90,.08));border:1.5px solid rgba(196,149,90,.35);border-radius:14px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:14px}
+.rp-icon{font-size:2rem}
+.rp-info .rp-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.12em;color:#bbb;margin-bottom:2px}
+.rp-info .rp-name{font-weight:600;font-size:.92rem;color:var(--vinho)}
+.rp-info .rp-desc{font-size:.73rem;color:var(--moka);margin-top:3px;line-height:1.4}
+
+.score-grade{width:84px;height:84px;border-radius:50%;border:4px solid var(--cobre);margin:0 auto 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(196,149,90,.1),rgba(139,45,66,.08))}
+.score-num{font-family:'Cormorant SC',serif;font-size:2rem;font-weight:600;color:var(--vinho);line-height:1}
+.score-total{font-size:.62rem;color:#ccc;letter-spacing:.1em}
+
+.score-items{display:flex;flex-direction:column;gap:9px;margin-bottom:18px}
+.score-item{display:flex;justify-content:space-between;align-items:center;padding:9px 13px;background:#fff;border-radius:10px;border:1px solid var(--blush)}
+.score-item-name{font-size:.78rem;color:var(--moka)}
+.score-item-pts{display:flex;align-items:center;gap:8px}
+.score-item-bar{height:6px;background:var(--blush);border-radius:3px;width:80px;overflow:hidden}
+.score-item-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--vinho-c),var(--cobre));width:0;transition:width 1s ease}
+
+/* Improvement tips */
+.improve-section{margin-bottom:18px}
+.improve-title{font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;color:var(--cobre);font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.improve-item{background:#fff;border:1px solid var(--blush);border-left:3px solid var(--cobre);border-radius:0 10px 10px 0;padding:10px 14px;margin-bottom:7px;font-size:.78rem;line-height:1.5;color:var(--moka)}
+.improve-item strong{display:block;color:var(--vinho);font-size:.75rem;margin-bottom:3px}
+.improve-item.tip-great{border-left-color:var(--verde)}
+.improve-item.tip-great strong{color:#16a34a}
+
+.score-comment{background:rgba(196,149,90,.09);border:1px solid rgba(196,149,90,.28);border-radius:12px;padding:13px 15px;font-size:.78rem;line-height:1.65;color:var(--moka);margin-bottom:18px}
+.score-actions{display:flex;gap:9px}
+.score-actions button{flex:1;padding:12px;border-radius:11px;font-family:'Josefin Sans',sans-serif;font-size:.77rem;font-weight:600;letter-spacing:.08em;cursor:pointer;transition:all .2s}
+.btn-retry{background:#fff;border:2px solid var(--vinho);color:var(--vinho)}
+.btn-retry:hover{background:rgba(139,45,66,.06)}
+.btn-new{background:linear-gradient(135deg,var(--vinho-p),var(--vinho));border:none;color:#fff;box-shadow:0 2px 10px rgba(106,31,48,.28)}
+.btn-new:hover{transform:translateY(-1px)}
+
+/* ── LOGIN SCREEN ── */
+.login-screen{
+  position:fixed;inset:0;background:linear-gradient(135deg,var(--vinho-p) 0%,var(--vinho) 50%,var(--cobre) 100%);
+  z-index:999;display:flex;align-items:center;justify-content:center;padding:20px
+}
+.login-card{
+  background:var(--marfim);border-radius:22px;padding:40px 44px;width:100%;max-width:400px;
+  box-shadow:0 12px 48px rgba(26,15,10,.4);animation:scaleIn .35s ease
+}
+.login-logo{text-align:center;margin-bottom:28px}
+.login-logo h1{font-family:'Cormorant SC',serif;font-size:1.7rem;font-weight:400;
+  letter-spacing:.2em;color:var(--vinho);margin-bottom:4px}
+.login-logo p{font-size:.72rem;color:#bbb;letter-spacing:.14em;text-transform:uppercase}
+.login-field{margin-bottom:16px}
+.login-field label{display:block;font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;
+  color:var(--moka);margin-bottom:6px;font-weight:600}
+.login-field input{
+  width:100%;padding:12px 16px;border:1.5px solid var(--blush);border-radius:11px;
+  font-family:'Josefin Sans',sans-serif;font-size:.88rem;background:#fff;
+  color:var(--tinta);outline:none;transition:border-color .2s
+}
+.login-field input:focus{border-color:var(--vinho)}
+.login-error{background:#fef2f2;border:1px solid #fca5a5;border-radius:9px;
+  padding:9px 14px;font-size:.76rem;color:#dc2626;margin-bottom:14px;display:none;text-align:center}
+.login-btn{
+  width:100%;padding:14px;background:linear-gradient(135deg,var(--vinho-p),var(--vinho));
+  color:#fff;border:none;border-radius:12px;font-family:'Josefin Sans',sans-serif;
+  font-size:.85rem;font-weight:600;letter-spacing:.1em;cursor:pointer;
+  transition:all .2s;box-shadow:0 4px 14px rgba(106,31,48,.35);margin-top:4px
+}
+.login-btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(106,31,48,.4)}
+.login-user-badge{
+  background:linear-gradient(135deg,rgba(196,149,90,.12),rgba(139,45,66,.08));
+  border:1px solid rgba(196,149,90,.3);border-radius:10px;
+  padding:7px 14px;font-size:.72rem;color:var(--moka);text-align:center;margin-top:14px
+}
+/* SURPRISE BANNER */
+.surprise-banner{
+  margin:14px 12px 4px;
+  background:linear-gradient(135deg,rgba(139,45,66,.08),rgba(196,149,90,.1));
+  border:1.5px solid rgba(196,149,90,.4);border-radius:14px;
+  padding:14px 16px;display:flex;align-items:flex-start;gap:12px
+}
+.surprise-icon{font-size:1.8rem;flex-shrink:0;line-height:1}
+.surprise-text{display:flex;flex-direction:column;gap:3px}
+.surprise-text strong{font-size:.82rem;color:var(--vinho);letter-spacing:.04em}
+.surprise-text span{font-size:.71rem;color:var(--moka);line-height:1.45;opacity:.8}
+
+/* DIFF FILTER */
+.diff-filter{padding:12px 12px 6px}
+.diff-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.12em;color:#bbb;margin-bottom:8px}
+.diff-btns{display:flex;gap:6px}
+.diff-btn{flex:1;padding:7px 4px;border-radius:9px;border:1.5px solid var(--blush);
+  font-family:'Josefin Sans',sans-serif;font-size:.69rem;font-weight:600;
+  text-align:center;cursor:pointer;transition:all .18s;color:#aaa;background:#fff}
+.diff-btn:hover{border-color:var(--cobre);color:var(--moka)}
+.diff-btn.active{background:var(--vinho);border-color:var(--vinho);color:#fff}
+.diff-btn.facil.active{background:var(--verde);border-color:var(--verde)}
+.diff-btn.medio.active{background:var(--amarelo);border-color:var(--amarelo)}
+.diff-btn.dificil.active{background:#ef4444;border-color:#ef4444}
+
+/* SCENARIO COUNT */
+.scenario-count{
+  margin:0 12px 6px;padding:8px 14px;
+  background:var(--creme);border-radius:10px;
+  font-size:.72rem;color:var(--moka);text-align:center;line-height:1.4
+}
+.scenario-count strong{color:var(--vinho)}
+
+/* REVEALED SCENARIO in score */
+.revealed-scenario{
+  background:var(--creme);border:1px solid var(--blush);border-radius:12px;
+  padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px
+}
+.rs-icon{font-size:1.3rem}
+.rs-info .rs-label{font-size:.63rem;text-transform:uppercase;letter-spacing:.1em;color:#bbb}
+.rs-info .rs-name{font-size:.85rem;font-weight:600;color:var(--tinta);margin-top:1px}
+.rs-info .rs-diff{font-size:.68rem;font-weight:600;margin-top:2px}
+
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-thumb{background:var(--warm);border-radius:4px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen" style="display:none">
+  <div class="login-card">
+    <div class="login-logo">
+      <h1>Athena</h1>
+      <p>Simulador de Vendas</p>
+    </div>
+    <div class="login-error" id="loginError">Usuário ou senha incorretos.</div>
+    <div class="login-field">
+      <label>Usuário</label>
+      <select id="loginUser" onchange="document.getElementById('loginPass').focus()" style="width:100%;padding:11px 14px;border:1.5px solid var(--blush);border-radius:10px;font-family:'Josefin Sans',sans-serif;font-size:.88rem;background:#fff;color:var(--tinta);cursor:pointer;appearance:auto">
+        <option value="">— Selecione seu nome —</option>
+        <option value="brendha">Brendha</option>
+        <option value="scharles">Dr. Scharles</option>
+        <option value="aurelio">Dr. Aurélio</option>
+        <option value="mone">Dra. Mone</option>
+        <option value="adm">Administrador</option>
+      </select>
+    </div>
+    <div class="login-field">
+      <label>Senha</label>
+      <input type="password" id="loginPass" placeholder="Digite sua senha" autocomplete="current-password" onkeydown="if(event.key==='Enter') doLogin()">
+    </div>
+    <button class="login-btn" onclick="doLogin()">Entrar</button>
+    <div class="login-user-badge" id="loginBadge" style="display:none"></div>
+  </div>
+</div>
+
+<header>
+  <h1>Athena · <span>Simulador de Vendas</span></h1>
+  <div style="display:flex;align-items:center;gap:12px">
+    <div class="hdr-badge" id="userBadge"></div>
+    <div class="hdr-badge" style="cursor:pointer;background:rgba(255,255,255,.1)" onclick="doLogout()">Sair</div>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" data-tab="avaliacao">Avaliação Clínica</div>
+  <div class="tab" data-tab="comercial">Abordagem Comercial</div>
+</div>
+
+<div class="app">
+
+  <!-- AVALIAÇÃO -->
+  <div class="panel active" id="panel-avaliacao">
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2>Treinamento Clínico</h2>
+        <small>Cenário e perfil sorteados ao iniciar</small>
+      </div>
+      <div class="surprise-banner" id="surprise-aval">
+        <div class="surprise-icon">🎲</div>
+        <div class="surprise-text">
+          <strong>Modo Surpresa Total</strong>
+          <span>Cenário e perfil do paciente são sorteados aleatoriamente. Você só descobre ao vivo!</span>
+        </div>
+      </div>
+      <div class="diff-filter" id="diff-filter-aval">
+        <div class="diff-label">Nível de dificuldade</div>
+        <div class="diff-btns">
+          <div class="diff-btn active" data-diff="todos" onclick="setDiff('aval','todos',this)">Todos</div>
+          <div class="diff-btn facil" data-diff="facil" onclick="setDiff('aval','facil',this)">Fácil</div>
+          <div class="diff-btn medio" data-diff="medio" onclick="setDiff('aval','medio',this)">Médio</div>
+          <div class="diff-btn dificil" data-diff="dificil" onclick="setDiff('aval','dificil',this)">Difícil</div>
+        </div>
+      </div>
+      <div class="scenario-count" id="count-aval"></div>
+      <button class="start-btn" id="start-aval" onclick="startSession('aval')">🎲 Iniciar Surpresa!</button>
+      <div style="padding:12px 12px 6px;border-top:1px solid var(--blush);margin-top:10px">
+        <div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.12em;color:#bbb;margin-bottom:8px">📊 Simulações de hoje</div>
+        <div id="historyList" style="max-height:220px;overflow-y:auto"></div>
+      </div>
+    </div>
+    <div class="chat-area" id="chat-aval">
+      <div class="empty-chat">
+        <div class="big-icon">🦷</div>
+        <p>Clique em <strong>🎲 Iniciar Surpresa!</strong><br>A conversa terá <strong>4 etapas</strong>: Conexão → Diagnóstico → Tratamento → Negociação.<br>A nota só aparece ao completar todas as etapas.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMERCIAL -->
+  <div class="panel" id="panel-comercial">
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2>Treinamento Comercial</h2>
+        <small>Cenário e perfil sorteados ao iniciar</small>
+      </div>
+      <div class="surprise-banner" id="surprise-com">
+        <div class="surprise-icon">🎲</div>
+        <div class="surprise-text">
+          <strong>Modo Surpresa Total</strong>
+          <span>Cenário e perfil do paciente são sorteados aleatoriamente. Você só descobre ao vivo!</span>
+        </div>
+      </div>
+      <div class="diff-filter" id="diff-filter-com">
+        <div class="diff-label">Nível de dificuldade</div>
+        <div class="diff-btns">
+          <div class="diff-btn active" data-diff="todos" onclick="setDiff('com','todos',this)">Todos</div>
+          <div class="diff-btn facil" data-diff="facil" onclick="setDiff('com','facil',this)">Fácil</div>
+          <div class="diff-btn medio" data-diff="medio" onclick="setDiff('com','medio',this)">Médio</div>
+          <div class="diff-btn dificil" data-diff="dificil" onclick="setDiff('com','dificil',this)">Difícil</div>
+        </div>
+      </div>
+      <div class="scenario-count" id="count-com"></div>
+      <button class="start-btn" id="start-com" onclick="startSession('com')">🎲 Iniciar Surpresa!</button>
+      <div style="padding:12px 12px 6px;border-top:1px solid var(--blush);margin-top:10px">
+        <div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.12em;color:#bbb;margin-bottom:8px">📊 Simulações de hoje</div>
+        <div id="historyListCom" style="max-height:220px;overflow-y:auto"></div>
+      </div>
+    </div>
+    <div class="chat-area" id="chat-com">
+      <div class="empty-chat">
+        <div class="big-icon">💰</div>
+        <p>Clique em <strong>Iniciar Surpresa!</strong><br>Cenário e perfil do paciente serão sorteados — você só saberá quem é ao final!</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- SCORE -->
+<div class="score-overlay" id="scoreOverlay">
+  <div class="score-card">
+    <div class="score-title" id="scoreTitle">Resultado do Treino</div>
+    <div class="score-subtitle" id="scoreSubtitle"></div>
+    <div class="revealed-scenario" id="revealedScenario"></div>
+    <div class="revealed-profile" id="revealedProfile"></div>
+    <div class="score-grade">
+      <span class="score-num" id="scoreNum">—</span>
+      <span class="score-total">/10</span>
+    </div>
+    <div class="score-items" id="scoreItems"></div>
+    <div class="improve-section">
+      <div class="improve-title">💡 O que melhorar</div>
+      <div id="improveTips"></div>
+    </div>
+    <div class="score-comment" id="scoreComment"></div>
+    <div class="score-actions">
+      <button class="btn-retry" onclick="retrySession()">↺ Repetir cenário</button>
+      <button class="btn-new" onclick="closeScore()">Novo cenário</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   AUTH
+═══════════════════════════════════════════════════ */
+const USERS = [
+  { user:'brendha',   pass:'antonio123', name:'Brendha',      role:'Equipe' },
+  { user:'scharles',  pass:'scharles123',name:'Dr. Scharles',  role:'Doutor' },
+  { user:'aurelio',   pass:'aurelio123', name:'Dr. Aurélio',   role:'Doutor' },
+  { user:'mone',      pass:'cooper123',  name:'Dra. Mone',     role:'Doutora' },
+  { user:'adm',       pass:'ximia123',   name:'Administrador', role:'Admin' },
+];
+
+let currentUser = null;
+
+// Auto-login pelo usuário do Vello
+(function autoLogin(){
+  const MAP = {thais:'adm', dra_mone:'mone', dr_aurelio:'aurelio', dr_scharles:'scharles', brendha:'brendha', bruna:'adm', suelen:'adm'};
+  function tryLogin(){
+    let velloUser = localStorage.getItem('ou_currentUser');
+    if (!velloUser) { try { velloUser = window.parent.localStorage.getItem('ou_currentUser'); } catch(e){} }
+    const u = USERS.find(x => x.user === (MAP[velloUser] || 'adm'));
+    if (u) {
+      currentUser = u;
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('userBadge').textContent = '👤 ' + u.name;
+      renderHistory();
+    }
+  }
+  if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', ()=>setTimeout(tryLogin,100)); }
+  else { setTimeout(tryLogin, 100); }
+})();
+
+function doLogin() {
+  const u = document.getElementById('loginUser').value;
+  const p = document.getElementById('loginPass').value;
+  const found = USERS.find(x => x.user === u && x.pass === p);
+  const err = document.getElementById('loginError');
+  if (!found) {
+    err.style.display = 'block';
+    document.getElementById('loginPass').value = '';
+    return;
+  }
+  err.style.display = 'none';
+  currentUser = found;
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('userBadge').textContent = `👤 ${found.name}`;
+  renderHistory();
+}
+
+function doLogout() {
+  currentUser = null;
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginUser').selectedIndex = 0;
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('userBadge').textContent = '';
+}
+
+/* ═══════════════════════════════════════════════════
+   PROFILES
+═══════════════════════════════════════════════════ */
+const PROFILES = [
+  {
+    id:'analitico',
+    name:'Carlos — Analítico',
+    icon:'🧐',
+    type:'Perfil Analítico',
+    desc:'Quer dados, evidências e comparativos antes de decidir. Faz perguntas técnicas e detalhadas. Não se convence por emoção.',
+    tips:{
+      aval:{
+        conexao:'Analíticos valorizam preparo. Inicie com dados e mostre que conhece o caso antes de criar vínculo.',
+        diagnostico:'Cite exames específicos, protocolos e taxas de sucesso. Ele quer saber o "porquê" de cada passo.',
+        tratamento:'Ofereça comparativos com prós e contras. Use termos técnicos precisos — generalizações o afastam.',
+        negociacao:'Proponha o próximo passo lógico: "Vamos agendar a tomografia para ter dados concretos antes de decidir?"'
+      },
+      com:{
+        rapport:'Mostre credenciais, tempo de clínica e casos documentados. Ele precisa confiar tecnicamente primeiro.',
+        argumentacao:'Compare especificações dos materiais, não apenas o preço. Explique o custo-benefício com dados.',
+        contorno:'Nunca negocie sem justificar. Dê condições por volume ou adiantamento, sempre com explicação clara.',
+        fechamento:'Formalize tudo: envie orçamento detalhado por escrito com validade. Ele decide com calma e razão.'
+      }
+    }
+  },
+  {
+    id:'planejador',
+    name:'Márcia — Planejadora',
+    icon:'📋',
+    type:'Perfil Planejador',
+    desc:'Precisa ver o processo completo antes de avançar. Questiona prazos, etapas e riscos. Decide quando sente segurança no plano.',
+    tips:{
+      aval:{
+        conexao:'Mostre que você tem um plano estruturado. Diga: "Vou te explicar cada etapa do início ao fim."',
+        diagnostico:'Antecipe os riscos e explique como a clínica os gerencia. Transparência no diagnóstico gera confiança.',
+        tratamento:'Use cronogramas. Diga quantas consultas, quanto tempo entre etapas e o que acontece em cada uma.',
+        negociacao:'Ajude a planejar: "Quando seria ideal para você começar considerando sua agenda e rotina?"'
+      },
+      com:{
+        rapport:'Apresente o tratamento como um projeto com fases. Ela adora quando tudo está organizado.',
+        argumentacao:'Explique o que está incluso em cada etapa do valor. Detalhe = segurança para ela.',
+        contorno:'Ofereça parcelamento por fases do tratamento — é a forma mais natural para ela.',
+        fechamento:'Proponha uma data de início e deixe o plano por escrito. Ela precisa "visualizar" o compromisso.'
+      }
+    }
+  },
+  {
+    id:'comunicador',
+    name:'Letícia — Comunicadora',
+    icon:'💬',
+    type:'Perfil Comunicador',
+    desc:'Emotiva e relacional. Toma decisões pelo sentimento e pela confiança na pessoa. Responde muito bem à empatia e histórias.',
+    tips:{
+      aval:{
+        conexao:'Conecte-se emocionalmente primeiro. Pergunte como ela se sente com a situação antes de qualquer proposta.',
+        diagnostico:'Conte casos de pacientes similares (sem nomes). O "já vi isso funcionar" vale muito para ela.',
+        tratamento:'Use linguagem visual e emocional: "Você vai se olhar no espelho e amar o resultado."',
+        negociacao:'Convide com afeto: "Quero muito te ajudar nessa jornada. Que tal começarmos na semana que vem?"'
+      },
+      com:{
+        rapport:'Ela compra de quem ela gosta. Invista na relação antes de falar em preço.',
+        argumentacao:'Fale do impacto na vida dela: autoestima, sorrir com confiança, fotos com a família.',
+        contorno:'Nunca confronte diretamente. Diga: "Entendo, e o que é mais importante pra você nessa decisão?"',
+        fechamento:'Um gesto de carinho no fechamento funciona: "Você vai ficar incrível, mal posso esperar!"'
+      }
+    }
+  },
+  {
+    id:'executor',
+    name:'Roberto — Executor',
+    icon:'⚡',
+    type:'Perfil Executor',
+    desc:'Direto, objetivo e impaciente. Quer a solução mais rápida e eficiente. Detesta enrolação e processos longos.',
+    tips:{
+      aval:{
+        conexao:'Seja direto desde o início. Apresente o plano nos primeiros 2 minutos, sem rodeios desnecessários.',
+        diagnostico:'Foque em resultado e prazo, não no processo. "Em X semanas você terá o diagnóstico completo."',
+        tratamento:'Uma opção, não três. Diga qual é a melhor e por quê. Ele não quer comparar — quer decidir.',
+        negociacao:'Feche já: "Posso verificar a agenda agora, quando você prefere começar? Tenho vaga essa semana."'
+      },
+      com:{
+        rapport:'Vá direto ao ponto. Ele respeita quem não perde o tempo dele.',
+        argumentacao:'"Por R$ X a mais, você garante qualidade e evita refazer" — argumento de eficiência funciona.',
+        contorno:'Não alongue objeções. Dê uma resposta curta e direta e volte para o fechamento.',
+        fechamento:'Tenha disponibilidade na agenda já. "Tenho uma vaga amanhã cedo, fechamos?"'
+      }
+    }
+  }
+];
+
+/* ═══════════════════════════════════════════════════
+   CENÁRIOS — AVALIAÇÃO (12)
+═══════════════════════════════════════════════════ */
+const SCENARIOS_AVAL = [
+  {
+    id:'implante-unico',
+    title:'Implante unitário',
+    queixa:'"Perdi um dente há 6 meses. Quero repor."',
+    difficulty:'medio',
+    treatments:['Implante unitário + coroa','Prótese parcial removível','Prótese fixa adesiva'],
+    responses:{
+      analitico:['🎧 Qual o protocolo para avaliação óssea? Fazem tomografia aqui?','🎧 Qual a taxa de sucesso de implante nessa região? Tem dado da clínica?','🎧 O implante é nacional ou importado? Qual marca?','🎧 Quanto tempo esse implante dura na média?'],
+      planejador:['🎧 Pode me explicar cada etapa do processo do começo ao fim?','🎧 Quantas consultas vou precisar? Preciso organizar minha agenda.','🎧 Tem algum risco de dar errado? Como vocês lidam com isso?','🎧 Se eu não fizer agora, o que acontece com o osso?'],
+      comunicador:['🎧 Fico tão insegura com isso... minha amiga fez implante e teve problema.','🎧 Vai doer muito? Tenho muito medo de dentista.','🎧 Como fico durante o período sem o dente? Fico com cara estranha?','🎧 Quanto tempo até eu poder sorrir normal de novo?'],
+      executor:['🎧 Quanto tempo demora tudo isso?','🎧 Tem como acelerar o processo?','🎧 Qual é a opção mais rápida?','🎧 Posso já marcar e começar logo?']
+    }
+  },
+  {
+    id:'implante-multiplos',
+    title:'Múltiplos implantes',
+    queixa:'"Perdi vários dentes e uso prótese removível há anos."',
+    difficulty:'dificil',
+    treatments:['Implantes múltiplos convencionais','All-on-4 superior','All-on-6 duplo','Prótese total implantossuportada'],
+    responses:{
+      analitico:['🎧 Qual a diferença técnica entre All-on-4 e implantes convencionais?','🎧 Qual protocolo tem mais evidência publicada atualmente?','🎧 O índice de falha do All-on-4 é maior ou menor?','🎧 Tem relatório de casos da clínica que eu possa analisar?'],
+      planejador:['🎧 Me conta o plano completo, etapa por etapa, com prazos.','🎧 Quanto tempo fico sem os dentes durante o processo?','🎧 E se uma etapa atrasar? Tem plano B?','🎧 Posso parcelar cada etapa separadamente?'],
+      comunicador:['🎧 Essa prótese me deixa tão constrangida... quero me sentir bem de novo.','🎧 Minha filha disse que deveria fazer implante. O que você acha?','🎧 Vai me deixar com sorriso bonito mesmo? Isso é muito importante pra mim.','🎧 Tenho medo de ficar com cara de dentadura...'],
+      executor:['🎧 Qual é a solução definitiva e mais rápida?','🎧 Não tenho paciência para tratamentos longos.','🎧 Me diz direto: implante ou All-on-4?','🎧 Quando posso começar?']
+    }
+  },
+  {
+    id:'estetica',
+    title:'Insatisfação estética — sorriso',
+    queixa:'"Não gosto do meu sorriso. Dentes tortos e amarelados."',
+    difficulty:'facil',
+    treatments:['Facetas de porcelana','Clareamento + contenção','Alinhadores invisíveis','Ortodontia convencional'],
+    responses:{
+      analitico:['🎧 Facetas desgastam o dente? Qual o percentual de desgaste mínimo?','🎧 Qual a durabilidade comparando faceta cerâmica com alinhador?','🎧 Tem algum estudo comparando os resultados das opções?','🎧 Em caso de fratura da faceta, qual o custo de reparo?'],
+      planejador:['🎧 Qual o cronograma completo de cada opção?','🎧 Depois do tratamento preciso de manutenção? Com que frequência?','🎧 Posso fazer clareamento agora e facetas depois?','🎧 Qual opção tem menos etapas?'],
+      comunicador:['🎧 Sempre fui muito tímida por causa dos meus dentes...','🎧 Qual me deixa mais bonita mais rápido?','🎧 Minha colega fez faceta e ficou perfeita! Pode ser igual?','🎧 Tenho um evento importante em 3 meses, dá tempo?'],
+      executor:['🎧 Qual dá resultado mais rápido?','🎧 Não quero usar aparelho de jeito nenhum.','🎧 Resolve isso em menos de 4 meses?','🎧 Quanto tempo de cadeira em cada opção?']
+    }
+  },
+  {
+    id:'dor-cronica',
+    title:'Dor crônica — dente comprometido',
+    queixa:'"Tenho dor há semanas nesse dente. Já tomei remédio e voltou."',
+    difficulty:'medio',
+    treatments:['Endodontia (canal)','Extração + implante imediato','Extração + espaço para implante futuro','Extração simples'],
+    responses:{
+      analitico:['🎧 Qual a diferença de prognóstico entre salvar com canal e extrair?','🎧 Qual a taxa de sucesso do canal nesse caso?','🎧 Se o canal falhar no futuro, qual o custo do retrabalho?','🎧 Tem como eu ver a radiografia e entender o que está acontecendo?'],
+      planejador:['🎧 Se fizer o canal, depois vou precisar de coroa também?','🎧 Quanto tempo até o dente estar completamente restaurado?','🎧 Quais são os riscos de adiar esse tratamento?','🎧 Se extrair, quando posso colocar o implante?'],
+      comunicador:['🎧 Que horror, estou sofrendo muito com essa dor...','🎧 Tenho medo de fazer canal. Vai doer?','🎧 Prefiro tirar logo e acabar com esse sofrimento. É seguro?','🎧 Me ajuda a tomar a decisão certa, você que entende disso.'],
+      executor:['🎧 O que resolve mais rápido essa dor?','🎧 Pode atender hoje? Não aguento mais.','🎧 Canal ou extração? Me fala o mais rápido.','🎧 Quantas sessões preciso para resolver?']
+    }
+  },
+  {
+    id:'bruxismo',
+    title:'Bruxismo e desgaste dental',
+    queixa:'"Acordo todo dia com dor na mandíbula. Dizem que range os dentes."',
+    difficulty:'medio',
+    treatments:['Placa miorrelaxante','Toxina botulínica (Botox)','Reabilitação + placa','Acompanhamento e fisioterapia'],
+    responses:{
+      analitico:['🎧 Qual a diferença de eficácia entre placa e botox para bruxismo?','🎧 O botox na mandíbula tem efeitos colaterais? Por quanto tempo dura?','🎧 O desgaste pode ser revertido ou só estabilizado?','🎧 Tem protocolo específico da clínica para casos assim?'],
+      planejador:['🎧 Qual a sequência ideal de tratamento para o meu caso?','🎧 A placa precisa de ajustes periódicos? De quanto em quanto tempo?','🎧 Quanto tempo leva até sentir melhora?','🎧 Depois que tratar, o problema pode voltar?'],
+      comunicador:['🎧 Acordo todo dia com dor, não aguento mais isso...','🎧 Botox no rosto me deixa com cara diferente? Fico preocupada.','🎧 Meu marido reclama do barulho à noite. Isso tem cura?','🎧 Qual você indicaria pra mim? Confio na sua opinião.'],
+      executor:['🎧 Qual o tratamento mais rápido para parar a dor?','🎧 Tem como resolver em uma sessão?','🎧 Placa ou botox? Qual funciona mais rápido?','🎧 Quando consigo agendar?']
+    }
+  },
+  {
+    id:'periodontia',
+    title:'Sangramento gengival e mobilidade',
+    queixa:'"Minha gengiva sangra muito e sinto os dentes balançando."',
+    difficulty:'dificil',
+    treatments:['Raspagem e aplainamento radicular','Cirurgia periodontal','Extrações + reabilitação total','Tratamento por fases'],
+    responses:{
+      analitico:['🎧 Qual o estágio da minha doença periodontal? Tem classificação?','🎧 Com raspagem, qual a chance de não precisar de cirurgia?','🎧 Esses dentes com mobilidade têm prognóstico de ser salvos?','🎧 Qual é o protocolo científico atual para periodontite?'],
+      planejador:['🎧 Quanto tempo dura o tratamento completo periodontal?','🎧 De quanto em quanto tempo preciso retornar para manutenção?','🎧 Se alguns dentes não puderem ser salvos, quando seriam repostos?','🎧 Existe algum tratamento que eu possa começar em casa?'],
+      comunicador:['🎧 Que vergonha, não sabia que estava tão ruim...','🎧 Vai doer muito a raspagem? Nunca fiz isso.','🎧 Tenho medo de perder os dentes. Consigo salvar todos?','🎧 Me fala com sinceridade: está muito grave?'],
+      executor:['🎧 Qual o tratamento mais rápido para parar de sangrar?','🎧 Tem como fazer tudo numa sessão só?','🎧 Posso fazer na hora? Estou com tempo agora.','🎧 O que é mais urgente resolver?']
+    }
+  },
+  {
+    id:'coroa-fratura',
+    title:'Dente fraturado — coroa ou extração?',
+    queixa:'"Meu dente quebrou comendo. Tá com metade só."',
+    difficulty:'medio',
+    treatments:['Coroa cerâmica sobre dente remanescente','Pino + coroa','Extração + implante','Restauração com resina composta'],
+    responses:{
+      analitico:['🎧 Tem como saber se o dente ainda tem estrutura suficiente para receber coroa?','🎧 Qual a longevidade de uma coroa cerâmica versus uma de metal-cerâmica?','🎧 Se optar por restauração, qual a chance de o dente aguentar mais 10 anos?','🎧 Qual material tem melhor custo-benefício comprovado?'],
+      planejador:['🎧 Se eu fizer a coroa agora, quando precisarei refazer?','🎧 Quantas consultas são necessárias para concluir o tratamento?','🎧 Posso usar um provisório enquanto a coroa definitiva não fica pronta?','🎧 Quais são os riscos de cada opção a longo prazo?'],
+      comunicador:['🎧 Fiquei tão envergonhada quando quebrou... precisava arrumar logo.','🎧 A coroa vai parecer natural? Ninguém vai notar?','🎧 Tenho medo de fazer e ficar feio...','🎧 Qual você faria se fosse você?'],
+      executor:['🎧 Qual a opção mais rápida para resolver hoje?','🎧 Dá para já deixar o dente apresentável nessa consulta?','🎧 Coroa ou restauração? O que você recomenda já?','🎧 Quantas sessões no mínimo?']
+    }
+  },
+  {
+    id:'sensibilidade',
+    title:'Sensibilidade dentária severa',
+    queixa:'"Não consigo comer nada gelado ou quente. É uma dor horrível."',
+    difficulty:'facil',
+    treatments:['Dessensibilização com flúor','Restauração cervical','Tratamento endodôntico','Gengivoplastia + dessensibilização'],
+    responses:{
+      analitico:['🎧 Qual a causa mais provável da sensibilidade no meu caso?','🎧 O dessensibilizante tem eficácia comprovada? Por quanto tempo dura?','🎧 Existe algum exame para saber se o nervo está comprometido?','🎧 Qual a diferença entre o tratamento com flúor e o laser?'],
+      planejador:['🎧 Quanto tempo leva para a sensibilidade desaparecer?','🎧 Preciso de mais de uma sessão de dessensibilização?','🎧 Posso continuar usando pasta de dentes sensível em casa junto?','🎧 Se não melhorar, qual seria o próximo passo?'],
+      comunicador:['🎧 Não consigo tomar nem um café gelado... é muito ruim.','🎧 Já tentei de tudo em casa e não melhorou nada.','🎧 Vai precisar de anestesia? Tenho muito medo de agulha.','🎧 Qual tratamento você indicaria para o meu caso?'],
+      executor:['🎧 Tem como resolver isso em uma sessão?','🎧 Qual o tratamento mais rápido e eficaz?','🎧 Pode atender agora? Está insuportável.','🎧 Em quanto tempo sinto resultado?']
+    }
+  },
+  {
+    id:'ortodontia-adulto',
+    title:'Ortodontia em adulto — primeira vez',
+    queixa:'"Tenho 38 anos e nunca fiz tratamento. Ainda dá tempo de colocar aparelho?"',
+    difficulty:'facil',
+    treatments:['Aparelho metálico convencional','Aparelho estético (cerâmico)','Alinhadores invisíveis','Avaliação de viabilidade ortodôntica'],
+    responses:{
+      analitico:['🎧 Existe limite de idade para tratamento ortodôntico eficaz?','🎧 O resultado em adulto é igual ao de adolescente?','🎧 Qual a diferença clínica entre alinhador e aparelho convencional para o meu caso?','🎧 Em que percentual dos adultos o tratamento atinge o resultado esperado?'],
+      planejador:['🎧 Quanto tempo de tratamento eu precisaria em média?','🎧 Com aparelho ou alinhador, qual tem menos consultas?','🎧 O que acontece depois que tiro o aparelho? Preciso de contenção pra sempre?','🎧 Tem como eu ver um plano simulado do resultado antes de começar?'],
+      comunicador:['🎧 Tenho vergonha de colocar aparelho com essa idade...','🎧 Alinhador invisível dá para trabalhar sem ninguém ver?','🎧 Minha filha tem aparelho e fica me incentivando a fazer. Acha que vale?','🎧 Fico com medo de sofrer muito. Como é o dia a dia com aparelho?'],
+      executor:['🎧 Qual é a opção mais discreta e com menor tempo de tratamento?','🎧 Posso começar o tratamento ainda esse mês?','🎧 Alinhador ou aparelho — qual você recomenda para terminar mais rápido?','🎧 Quantas consultas por mês eu precisaria comparecer?']
+    }
+  },
+  {
+    id:'enxerto-osseo',
+    title:'Enxerto ósseo necessário',
+    queixa:'"O dentista disse que preciso de enxerto antes de colocar implante. O que é isso?"',
+    difficulty:'dificil',
+    treatments:['Enxerto ósseo autógeno','Enxerto com biomaterial','Implante com carga imediata em osso existente','Reavaliação após reabsorção'],
+    responses:{
+      analitico:['🎧 O enxerto é com osso do meu próprio corpo ou material sintético?','🎧 Qual a taxa de sucesso do enxerto antes do implante?','🎧 O tempo de espera pós-enxerto é realmente necessário ou pode ser menor?','🎧 Tem evidência científica para o protocolo que vocês usam?'],
+      planejador:['🎧 Quanto tempo total desde o enxerto até o implante definitivo?','🎧 Preciso ficar de repouso após o enxerto? Por quanto tempo?','🎧 Quais são as complicações possíveis e como são manejadas?','🎧 Vou ficar sem o dente durante todo esse período?'],
+      comunicador:['🎧 Fiquei assustada quando falaram em cirurgia de enxerto...','🎧 Vai doer muito? Preciso ficar internada?','🎧 Por que meu osso sumiu? Isso tem alguma razão?','🎧 E se eu não fizer o enxerto? Tem outra saída?'],
+      executor:['🎧 Tem alguma forma de pular o enxerto e colocar o implante diretamente?','🎧 Qual o prazo mínimo possível para concluir tudo?','🎧 Isso é mesmo necessário ou é opcional?','🎧 Quanto tempo de afastamento do trabalho precisarei?']
+    }
+  },
+  {
+    id:'crianca-primeiro-atendimento',
+    title:'Criança com cárie extensa — primeira consulta',
+    queixa:'"Meu filho de 8 anos tem medo de dentista e está com muita cárie."',
+    difficulty:'medio',
+    treatments:['Odontopediatria com sedação consciente','Restaurações em resina + prevenção','Exodontia de dentes decíduos comprometidos','Protocolo preventivo e de adaptação'],
+    responses:{
+      analitico:['🎧 A sedação consciente é segura para crianças de 8 anos?','🎧 Restauração em dente de leite vale a pena? O dente vai cair em breve.','🎧 Qual o protocolo de vocês para adaptação de crianças com medo?','🎧 A cárie na dentição de leite afeta os dentes permanentes?'],
+      planejador:['🎧 Quantas consultas serão necessárias para resolver tudo?','🎧 Em que ordem vocês tratam os dentes? Começam pelos mais graves?','🎧 Como preparo meu filho em casa antes das consultas?','🎧 Qual o intervalo recomendado de retorno para manutenção?'],
+      comunicador:['🎧 Ele chora muito só de entrar aqui... fica com medo.','🎧 Tenho muito medo de traumatizá-lo. Vocês têm experiência com crianças assim?','🎧 O que eu fiz de errado para ele ter tanta cárie?','🎧 Como posso ajudar ele a confiar no dentista?'],
+      executor:['🎧 Dá para resolver tudo em poucas sessões?','🎧 Com sedação dá para fazer mais de um dente por vez?','🎧 Qual o prazo para terminar o tratamento completo?','🎧 Posso agendar já as próximas consultas hoje?']
+    }
+  },
+  {
+    id:'reabilitacao-total',
+    title:'Reabilitação oral completa',
+    queixa:'"Estou com vários dentes ruins, quebrados e outros faltando. Quero recomeçar do zero."',
+    difficulty:'dificil',
+    treatments:['Plano de reabilitação por fases','All-on-4 bilateral','Próteses fixas sobre implantes','Avaliação periodontal + reabilitação sequencial'],
+    responses:{
+      analitico:['🎧 Como é feito o planejamento digital para reabilitação total?','🎧 Qual protocolo tem mais estudos de longo prazo publicados?','🎧 Vocês usam mockup (simulação) antes de executar?','🎧 Qual o índice de retrabalho em reabilitações completas da clínica?'],
+      planejador:['🎧 Qual a duração estimada de um tratamento completo como o meu?','🎧 Posso continuar trabalhando normalmente durante o processo?','🎧 Qual a sequência lógica das etapas? Por onde vocês começam?','🎧 Vou ter dentes provisórios em todas as fases? Como fico durante a reabilitação?'],
+      comunicador:['🎧 Estou com vergonha de abrir a boca faz anos... isso vai mudar minha vida.','🎧 Já fui em alguns lugares e ninguém me explicou direito. Aqui é diferente?','🎧 Meu filho me deu esse tratamento de aniversário. Quero muito fazer bonito.','🎧 Quanto tempo até eu conseguir sorrir de verdade de novo?'],
+      executor:['🎧 Por onde começamos e quando posso ter os primeiros resultados?','🎧 Qual a opção mais rápida para ter um sorriso apresentável?','🎧 Dá para começar ainda essa semana?','🎧 Qual é o prazo mínimo realista para concluir tudo?']
+    }
+  }
+];
+
+/* ═══════════════════════════════════════════════════
+   CENÁRIOS — COMERCIAL (12)
+═══════════════════════════════════════════════════ */
+const SCENARIOS_COM = [
+  {
+    id:'implante-preco',
+    title:'Choque com o valor do implante',
+    queixa:'"Achei caro. Vi por R$2.500 em outra clínica."',
+    difficulty:'medio',
+    responses:{
+      analitico:['🎧 O que explica essa diferença de preço? Me detalha item por item.','🎧 Qual implante vocês usam? Nacional ou importado? Qual marca?','🎧 Tem garantia formal por escrito? Qual o prazo?','🎧 O mais barato usa material inferior ou só margem menor?'],
+      planejador:['🎧 Pode me detalhar o que está incluso em cada parcela?','🎧 Tem desconto se eu fechar todo o plano agora?','🎧 Em quantas vezes posso parcelar sem juros?','🎧 Os valores são garantidos se eu fechar hoje?'],
+      comunicador:['🎧 Fiquei assustada com o valor... é muito para mim.','🎧 Minha prima fez numa clínica popular e ficou lindo!','🎧 Vocês não fazem um precinho especial? Sou paciente antiga...','🎧 Me ajuda, não sei o que fazer...'],
+      executor:['🎧 Quanto desconto você me dá à vista?','🎧 Fecha no mesmo preço e a gente resolve agora.','🎧 Quanto é o mínimo de entrada?','🎧 Última oferta — quanto você consegue?']
+    }
+  },
+  {
+    id:'orcamento-total',
+    title:'Orçamento alto — tratamento completo',
+    queixa:'"R$32.000 é muito. Não tenho esse dinheiro."',
+    difficulty:'dificil',
+    responses:{
+      analitico:['🎧 Pode priorizar o que é clinicamente mais urgente com os valores separados?','🎧 Me manda uma planilha com cada procedimento e custo individual.','🎧 Em quanto tempo posso fazer por fases sem comprometer o resultado?','🎧 Tem financiamento com taxa menor que cartão?'],
+      planejador:['🎧 Como sugere dividir em etapas? O que fazer primeiro?','🎧 Tem parceria com algum banco ou financeira?','🎧 Se começar agora, os valores ficam garantidos por quanto tempo?','🎧 Qual o cronograma se eu parcelar o tratamento em 2 anos?'],
+      comunicador:['🎧 Meu Deus... eu quero muito mas fica tudo no financeiro.','🎧 Tem como usar meu cartão de crédito e parcelar bastante?','🎧 Precisa ser tudo de uma vez ou posso ir fazendo aos poucos?','🎧 Me ajuda a pensar numa forma de conseguir fazer isso...'],
+      executor:['🎧 Qual o desconto máximo à vista no total?','🎧 O que eu preciso fazer hoje para começar logo?','🎧 Me dá o menor preço total e fecha.','🎧 Tem como começar com metade e pagar o restante depois?']
+    }
+  },
+  {
+    id:'concorrente',
+    title:'Comparando com concorrente',
+    queixa:'"Tenho 3 orçamentos. Vocês estão 30% mais caro."',
+    difficulty:'dificil',
+    responses:{
+      analitico:['🎧 Você consegue comparar os orçamentos item por item comigo?','🎧 Qual a qualificação dos profissionais aqui comparado aos outros?','🎧 O implante usado na outra clínica é o mesmo?','🎧 Tem como provar que a diferença de preço é justificada?'],
+      planejador:['🎧 O que justifica essa diferença de preço?','🎧 Se der problema no outro lugar, consigo suporte aqui?','🎧 Qual a garantia formal que vocês oferecem?','🎧 Me fala o que está incluso que os outros não oferecem.'],
+      comunicador:['🎧 Fico com medo de escolher o mais barato e me arrepender...','🎧 Uma amiga fez no lugar barato e teve problema. Vocês são mais seguros?','🎧 Me convence a ficar aqui, porque eu gostei de você.','🎧 Meu marido disse para fechar no mais barato. O que você acha?'],
+      executor:['🎧 Fecha no mesmo preço dos outros e é meu.','🎧 Me dá um motivo rápido e objetivo para pagar mais caro.','🎧 O que vocês têm que o outro não tem? Em 30 segundos.','🎧 Não tenho tempo para longa conversa. Fecha ou não fecha?']
+    }
+  },
+  {
+    id:'parcelamento',
+    title:'Sem cartão — quer parcelar direto',
+    queixa:'"Não tenho cartão de crédito. Só consigo pagar em dinheiro parcelado."',
+    difficulty:'medio',
+    responses:{
+      analitico:['🎧 Vocês têm parcelamento próprio? Quais são as condições exatas?','🎧 Tem alguma financeira parceira com taxa menor que cartão?','🎧 Qual o valor mínimo de entrada para aceitar parcelar?','🎧 Tem desconto para pagamento adiantado das parcelas?'],
+      planejador:['🎧 Como funciona o parcelamento direto com a clínica?','🎧 Posso pagar uma etapa por vez conforme for fazendo o tratamento?','🎧 Qual o prazo máximo para parcelar?','🎧 Se eu atrasar uma parcela, o que acontece com o tratamento?'],
+      comunicador:['🎧 Fico com vergonha de pedir desconto, mas realmente preciso...','🎧 Tem algum jeito de eu conseguir fazer? Quero muito tratar aqui.','🎧 Me ajuda a pensar numa solução, por favor.','🎧 Alguém aqui já fez parcelamento direto?'],
+      executor:['🎧 Qual o menor valor de entrada que vocês aceitam?','🎧 Parcelamento direto tem ou não tem? Simples assim.','🎧 Quantas vezes no máximo?','🎧 Fechamos se tiver parcelamento direto.']
+    }
+  },
+  {
+    id:'urgencia-adiamento',
+    title:'Paciente protelando a decisão',
+    queixa:'"Preciso pensar mais. Vou voltar semana que vem."',
+    difficulty:'medio',
+    responses:{
+      analitico:['🎧 Me manda tudo por escrito para eu analisar com calma.','🎧 Quanto tempo esse orçamento tem validade?','🎧 Quais são os riscos clínicos de esperar mais alguns meses?','🎧 Tem algum dado que me ajude a decidir mais rápido?'],
+      planejador:['🎧 Preciso conversar com meu marido antes de decidir.','🎧 Posso marcar uma consulta com ele para vocês explicarem juntos?','🎧 Os valores ficam os mesmos se eu fechar no mês que vem?','🎧 Posso pensar mais uma semana sem perder a vaga?'],
+      comunicador:['🎧 Preciso de mais tempo para me sentir segura nessa decisão.','🎧 E se eu me arrepender depois?','🎧 Vocês vão continuar disponíveis? Fico com medo de perder essa oportunidade.','🎧 Me fala: você acha que devo fazer logo?'],
+      executor:['🎧 Não tenho tempo de voltar essa semana.','🎧 Me manda o orçamento e eu respondo por WhatsApp.','🎧 Posso fechar de casa sem vir aqui?','🎧 Quanto tempo tenho para decidir?']
+    }
+  },
+  {
+    id:'pos-problema',
+    title:'Trauma com tratamento anterior',
+    queixa:'"Fiz implante em outro lugar e deu problema. Tenho medo de investir de novo."',
+    difficulty:'dificil',
+    responses:{
+      analitico:['🎧 O que vocês fazem diferente que garantiria que não vai repetir?','🎧 Qual o protocolo de vocês em caso de falha?','🎧 Tem algum índice de falha documentado da clínica?','🎧 Quero ver o processo de planejamento antes de qualquer coisa.'],
+      planejador:['🎧 Primeiro preciso entender o que deu errado da última vez.','🎧 Como vocês garantem que isso não vai acontecer novamente?','🎧 Tem garantia por escrito se falhar?','🎧 Qual o protocolo passo a passo para evitar os problemas anteriores?'],
+      comunicador:['🎧 Foi um trauma... gastei muito dinheiro e sofri muito.','🎧 Como posso confiar de novo? Fiquei muito magoada.','🎧 Preciso sentir que estou em boas mãos antes de decidir qualquer coisa.','🎧 Você toparia fazer uma consulta de avaliação antes de eu decidir?'],
+      executor:['🎧 Não quero passar pelo mesmo. O que você me garante?','🎧 Se der problema, a clínica refaz sem custo?','🎧 Pode me mostrar casos parecidos com o meu que deram certo?','🎧 Quanto custa refazer se der errado?']
+    }
+  },
+  {
+    id:'marido-esposa',
+    title:'Cônjuge interferindo na decisão',
+    queixa:'"Meu marido acha que não precisa gastar tanto. Ele disse que é frescura."',
+    difficulty:'medio',
+    responses:{
+      analitico:['🎧 Tem material técnico que eu possa mostrar pra ele? Ele só acredita em dados.','🎧 Como você explicaria para um leigo por que o tratamento é necessário?','🎧 Esse tratamento é estético ou tem indicação clínica real?','🎧 Qual o impacto na saúde de não tratar? Tem como quantificar?'],
+      planejador:['🎧 Tem como marcar uma consulta com ele presente para explicar tudo?','🎧 Se eu mostrar o plano por escrito, ele pode entender melhor?','🎧 Qual a parte do tratamento que é mais importante para convencê-lo?','🎧 Tem como dividir em etapas para ele ver o resultado antes de continuar?'],
+      comunicador:['🎧 Fico tão sem graça com isso... me sinto culpada de querer gastar.','🎧 Mas eu sofro muito com essa situação, sabe?','🎧 Você acha que é certo investir mesmo ele discordando?','🎧 Tem alguma forma de justificar para ele que isso vale a pena?'],
+      executor:['🎧 Me dá um argumento rápido e direto para convencê-lo.','🎧 Qual a parte mais barata que eu posso começar sozinha sem ele saber?','🎧 Qual o impacto de não tratar nos próximos anos?','🎧 Posso fechar e depois mostro o resultado para ele?']
+    }
+  },
+  {
+    id:'plano-saude',
+    title:'Paciente com plano de saúde — quer desconto',
+    queixa:'"Tenho plano odontológico. Por que ele não cobre implante aqui?"',
+    difficulty:'facil',
+    responses:{
+      analitico:['🎧 Qual a diferença entre o que o plano cobre e o que vocês oferecem?','🎧 Posso usar o plano para a parte básica e pagar a diferença?','🎧 Por que a qualidade difere entre clínica credenciada e particular?','🎧 O plano cobre avaliação e radiografias?'],
+      planejador:['🎧 O que exatamente o plano cobre dentro do tratamento que preciso?','🎧 Posso usar o plano para etapas menores e fazer o implante particular?','🎧 Em quanto tempo o plano libera o procedimento se eu tentar pela rede?','🎧 Existe algum desconto para quem tem plano mas quer atender aqui?'],
+      comunicador:['🎧 Pago plano há anos e nunca usei... fico com raiva de não poder usar aqui.','🎧 É injusto não cobrir algo tão importante como implante.','🎧 Vocês não têm nenhuma condição especial para quem tem plano?','🎧 Me ajuda a entender por que vale mais a pena aqui do que pela rede.'],
+      executor:['🎧 Tem desconto para quem não pode usar o plano?','🎧 Qual o preço final sem o plano?','🎧 O que exatamente é diferente que justifica pagar particular?','🎧 Posso ao menos usar o plano para o diagnóstico?']
+    }
+  },
+  {
+    id:'paciente-pesquisador',
+    title:'Paciente que pesquisou tudo no Google',
+    queixa:'"Pesquisei muito e vi que implante pode rejeitar. Tem um risco grande?"',
+    difficulty:'dificil',
+    responses:{
+      analitico:['🎧 Vi que a taxa de rejeição pode chegar a 10%. Como vocês ficam abaixo disso?','🎧 O que influencia na taxa de sucesso? Diabéticos têm mais risco?','🎧 Vi que implantes de titânio de certas marcas têm problemas. Qual vocês usam?','🎧 Tem algum estudo recente sobre o protocolo de vocês?'],
+      planejador:['🎧 O que vocês fazem antes do implante para minimizar o risco de rejeição?','🎧 Qual o protocolo pós-operatório para garantir a osseointegração?','🎧 Se eu seguir todas as instruções, qual a probabilidade real de sucesso?','🎧 Quando saberei se o implante foi aceito pelo organismo?'],
+      comunicador:['🎧 Li tantas coisas ruins que fiquei com medo de qualquer procedimento...','🎧 Minha vizinha teve rejeição. Isso é comum aqui?','🎧 Me fala a verdade: qual o risco real que eu corro?','🎧 Consigo dormir tranquila se fizer aqui?'],
+      executor:['🎧 Qual a taxa de sucesso real de vocês? Número, não conversa.','🎧 E se rejeitar? Vocês refazem sem custo?','🎧 O que você me garante que não vai dar errado?','🎧 Dados objetivos: qual é o risco?']
+    }
+  },
+  {
+    id:'paciente-idoso',
+    title:'Paciente idoso — família envolvida',
+    queixa:'"Tenho 72 anos. Minha filha acha que não vale a pena investir em implante."',
+    difficulty:'medio',
+    responses:{
+      analitico:['🎧 Existe limite de idade para fazer implante com segurança?','🎧 Qual a expectativa de duração do implante para alguém da minha idade?','🎧 Quais são os riscos adicionais para pacientes idosos?','🎧 O retorno do investimento faz sentido para a minha expectativa de vida?'],
+      planejador:['🎧 Quantas consultas preciso? Tenho dificuldade para me locomover.','🎧 A recuperação é mais longa em pessoas idosas?','🎧 Minha filha pode me acompanhar nas consultas para entender o processo?','🎧 Tem alguma opção mais simples que também resolva meu problema?'],
+      comunicador:['🎧 Minha filha não quer que eu gaste dinheiro com isso...','🎧 Mas eu sofro muito com essa prótese removível. Ela escorrega na hora de comer.','🎧 Vale a pena para mim ainda, você acha?','🎧 Quero muito me sentir bem para os anos que me restam.'],
+      executor:['🎧 Me diz diretamente: compensa fazer com 72 anos?','🎧 Qual a solução mais simples e eficaz para o meu caso?','🎧 Quanto tempo de recuperação eu terei?','🎧 Qual o risco real de uma pessoa da minha idade?']
+    }
+  },
+  {
+    id:'segunda-opiniao',
+    title:'Veio por segunda opinião',
+    queixa:'"Outro dentista me mandou fazer 8 extrações. Quero uma segunda opinião."',
+    difficulty:'dificil',
+    responses:{
+      analitico:['🎧 Você vai chegar à mesma conclusão do outro dentista?','🎧 Com base em que critério decidem quais dentes extrair?','🎧 Existe algum exame que mostre com mais precisão o que precisa ser feito?','🎧 Se vocês discordarem, como saberei em quem confiar?'],
+      planejador:['🎧 Você vai analisar as radiografias que eu trouxe ou vai tirar novas?','🎧 Quanto tempo leva a avaliação completa?','🎧 Se chegar ao mesmo diagnóstico, me explica o porquê passo a passo.','🎧 Posso trazer o laudo do outro dentista para comparar?'],
+      comunicador:['🎧 Fiquei destruída quando ele disse que ia tirar 8 dentes...','🎧 Quero muito acreditar que tem como salvar. Tem esperança?','🎧 Como vou saber se você está me dizendo a verdade?','🎧 Me fala com honestidade o que você vê aqui.'],
+      executor:['🎧 Me diz logo: ele estava certo ou exagerou?','🎧 Qual o mínimo que precisa ser feito realmente?','🎧 Se eu precisar tirar dentes, quando começa o implante?','🎧 Qual a abordagem mais eficiente para o meu caso?']
+    }
+  },
+  {
+    id:'retorno-abandono',
+    title:'Paciente que abandonou tratamento e voltou',
+    queixa:'"Comecei o tratamento há 2 anos e parei. Agora quero retomar."',
+    difficulty:'medio',
+    responses:{
+      analitico:['🎧 O que mudou clinicamente nesses 2 anos de abandono?','🎧 Preciso refazer toda a avaliação ou aproveitamos o que já foi feito?','🎧 O tratamento anterior ainda tem validade ou começa do zero?','🎧 Qual o impacto financeiro de ter parado?'],
+      planejador:['🎧 Por onde retomamos o tratamento?','🎧 O que foi feito antes ainda é aproveitável?','🎧 Qual seria o novo cronograma para concluir tudo?','🎧 O valor do orçamento anterior ainda é válido?'],
+      comunicador:['🎧 Me sinto tão culpada por ter parado... sei que foi um erro.','🎧 Vocês vão me julgar por ter sumido?','🎧 Perdi alguma coisa que não tem mais jeito de recuperar?','🎧 Estou com medo de como estará minha boca depois de tanto tempo.'],
+      executor:['🎧 Qual o estado atual e o que precisa ser refeito?','🎧 Em quanto tempo consigo concluir o tratamento agora?','🎧 Me diz quanto vai custar para terminar.','🎧 Posso começar ainda essa semana?']
+    }
+  }
+];
+
+/* ═══════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════ */
+const AVAL_STAGES = [
+  { id:'conexao',      label:'1. Conexão',       icon:'🤝', desc:'Crie vínculo com o paciente. Demonstre empatia e ouça a queixa principal.' },
+  { id:'diagnostico',  label:'2. Diagnóstico',   icon:'🔍', desc:'Investigue a situação clínica. Faça perguntas técnicas e mapeie o caso.' },
+  { id:'tratamento',   label:'3. Tratamento',    icon:'🦷', desc:'Apresente as opções de tratamento com clareza e conhecimento técnico.' },
+  { id:'negociacao',   label:'4. Negociação',    icon:'🤝', desc:'Conduza para o fechamento. Mostre valor, lide com objeções e agende.' },
+];
+
+const state = {
+  aval:{ scenario:null, profile:null, active:false, msgCount:0, score:{}, diff:'todos', stage:0, stageMsgs:0, usedResponses:[] },
+  com: { scenario:null, profile:null, active:false, msgCount:0, score:{}, diff:'todos', usedResponses:[] }
+};
+let currentTab = 'avaliacao';
+const responseQueue = { aval:[], com:[] };
+let audioPlaying = null;
+let audioInterval = null;
+let lastCtx = 'aval';
+
+/* ═══════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  updateCount('aval');
+  updateCount('com');
+  document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
+});
+
+/* ═══════════════════════════════════════════════════
+   DIFFICULTY FILTER
+═══════════════════════════════════════════════════ */
+function setDiff(ctx, diff, el) {
+  state[ctx].diff = diff;
+  document.querySelectorAll(`#diff-filter-${ctx} .diff-btn`).forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  updateCount(ctx);
+}
+
+function getFilteredScenarios(ctx) {
+  const list = ctx === 'aval' ? SCENARIOS_AVAL : SCENARIOS_COM;
+  const diff = state[ctx].diff;
+  return diff === 'todos' ? list : list.filter(s => s.difficulty === diff);
+}
+
+function updateCount(ctx) {
+  const filtered = getFilteredScenarios(ctx);
+  const el = document.getElementById(`count-${ctx}`);
+  const diffLabel = {todos:'todos os níveis',facil:'nível fácil',medio:'nível médio',dificil:'nível difícil'}[state[ctx].diff];
+  el.innerHTML = `<strong>${filtered.length} cenários</strong> disponíveis em ${diffLabel}`;
+}
+
+function selectScenario(ctx, scenario, btn) {
+  // kept for compatibility — not used in surprise mode
+  state[ctx].scenario = scenario;
+}
+
+/* ═══════════════════════════════════════════════════
+   TAB
+═══════════════════════════════════════════════════ */
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === `panel-${tab}`));
+}
+
+/* ═══════════════════════════════════════════════════
+   SESSION START
+═══════════════════════════════════════════════════ */
+function startSession(ctx) {
+  const s = state[ctx];
+  lastCtx = ctx;
+
+  // Sort random scenario from filtered list
+  const filtered = getFilteredScenarios(ctx);
+  if (!filtered.length) return;
+  s.scenario = filtered[Math.floor(Math.random() * filtered.length)];
+
+  // Sort random profile
+  s.profile = PROFILES[Math.floor(Math.random() * PROFILES.length)];
+  s.active = true;
+  s.msgCount = 0;
+  s.stage = 0;
+  s.stageMsgs = 0;
+  s.usedResponses = [];
+  s.score = ctx === 'aval'
+    ? { conexao:0, diagnostico:0, tratamento:0, negociacao:0 }
+    : { rapport:0, argumentacao:0, contorno:0, fechamento:0 };
+
+  responseQueue[ctx] = [...s.scenario.responses[s.profile.id]];
+
+  const chatArea = document.getElementById(`chat-${ctx}`);
+  chatArea.innerHTML = '';
+
+  // Topbar
+  const topbar = document.createElement('div');
+  topbar.className = 'chat-topbar';
+  topbar.innerHTML = `
+    <div class="patient-info">
+      <div class="patient-avatar">${s.profile.icon}</div>
+      <div>
+        <div class="patient-name">${s.profile.name} · ${s.profile.type}</div>
+        <div class="patient-scenario">${s.scenario.title}</div>
+      </div>
+    </div>
+    <div class="chat-actions">
+      ${ctx === 'com' ? `<button class="end-btn" onclick="showScore('${ctx}')">Encerrar e avaliar</button>` : ''}
+    </div>
+  `;
+  chatArea.appendChild(topbar);
+
+  // Stage stepper (aval only)
+  if (ctx === 'aval') {
+    const stepper = document.createElement('div');
+    stepper.className = 'stage-stepper';
+    stepper.id = `stepper-${ctx}`;
+    chatArea.appendChild(stepper);
+    renderStepper(ctx);
+
+    const banner = document.createElement('div');
+    banner.className = 'stage-banner';
+    banner.id = `stage-banner-${ctx}`;
+    chatArea.appendChild(banner);
+    updateStageBanner(ctx);
+
+  }
+
+  // Profile card
+  const profileCard = document.createElement('div');
+  profileCard.style.cssText = 'margin:12px 16px 4px;background:linear-gradient(135deg,rgba(139,45,66,.07),rgba(196,149,90,.09));border:1px solid rgba(196,149,90,.3);border-radius:12px;padding:12px 16px;display:flex;align-items:flex-start;gap:12px;flex-shrink:0';
+  profileCard.innerHTML = `
+    <div style="font-size:1.6rem;line-height:1">${s.profile.icon}</div>
+    <div style="flex:1">
+      <div style="font-family:'Cormorant SC',serif;font-size:.85rem;color:var(--vinho);letter-spacing:.1em;font-weight:600">${s.profile.name}</div>
+      <div style="font-size:.72rem;color:var(--cobre);font-weight:600;text-transform:uppercase;letter-spacing:.1em;margin:2px 0">${s.profile.type}</div>
+      <div style="font-size:.75rem;color:var(--moka);line-height:1.45;opacity:.85">${s.profile.desc}</div>
+    </div>
+  `;
+  chatArea.appendChild(profileCard);
+
+  // Messages
+  const msgs = document.createElement('div');
+  msgs.className = 'messages';
+  msgs.id = `msgs-${ctx}`;
+  chatArea.appendChild(msgs);
+
+  // Quick replies (aval: dynamic by stage; com: fixed)
+  const qrWrap = document.createElement('div');
+  qrWrap.className = 'bottom-area';
+  qrWrap.id = `qr-wrap-${ctx}`;
+  if (ctx === 'aval') {
+    qrWrap.innerHTML = getStageQuickReplies(ctx);
+  } else {
+    const qrList = ['Entendo sua preocupação','Deixa eu te explicar a diferença','Posso facilitar o pagamento','Qual sua prioridade agora?'];
+    qrWrap.innerHTML = `<div class="quick-replies">${qrList.map(q => `<div class="qr" onclick="sendQuick('${ctx}',\`${q}\`)">${q}</div>`).join('')}</div>`;
+  }
+  chatArea.appendChild(qrWrap);
+
+  // Input
+  const inputWrap = document.createElement('div');
+  inputWrap.className = 'bottom-area';
+  inputWrap.innerHTML = `
+    <div class="mic-status" id="mic-status-${ctx}"></div>
+    <div class="input-bar">
+      <button class="mic-btn" id="mic-btn-${ctx}" onclick="toggleMic('${ctx}')" title="Gravar áudio (será transcrito)">🎙️</button>
+      <div style="flex:1;position:relative">
+        <textarea id="msgInput-${ctx}" class="msg-input" placeholder="Digite ou grave sua resposta..." rows="1"
+          onkeydown="handleKey(event,'${ctx}')" oninput="autoResize(this)"></textarea>
+      </div>
+      <button class="send-btn" onclick="sendMsg('${ctx}')">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>`;
+  chatArea.appendChild(inputWrap);
+
+  addSystemMsg(ctx, `Simulação iniciada · ${s.scenario.title}`);
+  setTimeout(() => addPatientMsg(ctx, s.scenario.queixa.replace(/"/g, '')), 900);
+}
+
+/* ═══════════════════════════════════════════════════
+   MESSAGES
+═══════════════════════════════════════════════════ */
+function addSystemMsg(ctx, text) {
+  const msgs = document.getElementById(`msgs-${ctx}`);
+  if (!msgs) return;
+  const div = document.createElement('div');
+  div.className = 'msg-system';
+  div.textContent = text;
+  msgs.appendChild(div);
+  scrollBottom(ctx);
+}
+
+function addPatientMsg(ctx, text) {
+  const msgs = document.getElementById(`msgs-${ctx}`);
+  const s = state[ctx];
+  if (!msgs) return;
+
+  const typing = document.createElement('div');
+  typing.className = 'typing';
+  typing.innerHTML = `
+    <div class="msg-av" style="background:linear-gradient(135deg,var(--vinho-p),var(--vinho));color:#fff;width:33px;height:33px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0">🎭</div>
+    <div class="typing-bubble"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>`;
+  msgs.appendChild(typing);
+  scrollBottom(ctx);
+
+  const delay = 900 + Math.random() * 700;
+  setTimeout(() => {
+    typing.remove();
+    const clean = text.replace('🎧 ', '');
+    const div = document.createElement('div');
+    div.className = 'msg patient';
+    div.innerHTML = `
+      <div class="msg-av">🎭</div>
+      <div class="msg-bubble">
+        <div class="msg-text">${clean}</div>
+        <span class="msg-time">${now()}</span>
+      </div>`;
+    msgs.appendChild(div);
+    scrollBottom(ctx);
+  }, delay);
+}
+
+function sendMsg(ctx) {
+  const input = document.getElementById('msgInput-' + ctx);
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  autoResize(input);
+  pushUserMsg(ctx, text);
+  scoreMsg(ctx, text, false);
+  triggerResponse(ctx);
+  if (ctx === 'aval') {
+    setTimeout(() => {
+      const qrWrap = document.getElementById('qr-wrap-aval');
+      if (qrWrap) qrWrap.innerHTML = getStageQuickReplies('aval');
+    }, 100);
+  }
+}
+
+function sendQuick(ctx, text) {
+  pushUserMsg(ctx, text);
+  scoreMsg(ctx, text, false);
+  triggerResponse(ctx);
+  if (ctx === 'aval') {
+    setTimeout(() => {
+      const qrWrap = document.getElementById('qr-wrap-aval');
+      if (qrWrap) qrWrap.innerHTML = getStageQuickReplies('aval');
+    }, 100);
+  }
+}
+
+function selectTreatment(el, ctx) {
+  document.querySelectorAll(`#treat-opts-${ctx} .topt`).forEach(t => t.classList.remove('selected'));
+  el.classList.add('selected');
+  const text = `Recomendo: ${el.textContent}`;
+  pushUserMsg(ctx, text);
+  scoreMsg(ctx, text, true);
+  triggerResponse(ctx);
+}
+
+function pushUserMsg(ctx, text) {
+  const msgs = document.getElementById(`msgs-${ctx}`);
+  if (!msgs) return;
+  const div = document.createElement('div');
+  div.className = 'msg user';
+  div.innerHTML = `
+    <div class="msg-av">👩‍💼</div>
+    <div class="msg-bubble">
+      <div class="msg-text">${text}</div>
+      <span class="msg-time">${now()}</span>
+    </div>`;
+  msgs.appendChild(div);
+  scrollBottom(ctx);
+}
+
+/* ═══════════════════════════════════════════════════
+   STAGE SYSTEM (aval only)
+═══════════════════════════════════════════════════ */
+function renderStepper(ctx) {
+  const el = document.getElementById(`stepper-${ctx}`);
+  if (!el) return;
+  const s = state[ctx];
+  let html = '';
+  AVAL_STAGES.forEach((st, i) => {
+    const cls = i < s.stage ? 'done' : i === s.stage ? 'active' : '';
+    const num = i < s.stage ? '✓' : (i + 1);
+    html += `<div class="stage-step ${cls}">
+      ${i > 0 ? `<div class="stage-line ${i <= s.stage ? 'done' : ''}"></div>` : ''}
+      <div class="stage-dot">${num}</div>
+      <div class="stage-label">${st.label}</div>
+    </div>`;
+  });
+  el.innerHTML = html;
+}
+
+function updateStageBanner(ctx) {
+  const el = document.getElementById(`stage-banner-${ctx}`);
+  if (!el) return;
+  const s = state[ctx];
+  const st = AVAL_STAGES[s.stage];
+  const msgNum = Math.min(s.stageMsgs, 4);
+  el.innerHTML = `<strong>${st.icon} ${st.label}</strong> — ${st.desc}<br><span style="font-size:.68rem;color:var(--cobre);opacity:.85;margin-top:4px;display:inline-block">Mensagem ${msgNum} de 4</span>`;
+}
+
+function getStageQuickReplies(ctx) {
+  const stage = state[ctx].stage;
+  const qrByStage = [
+    ['Olá! Como posso te ajudar hoje?','Pode me contar mais sobre isso?','Há quanto tempo tem essa queixa?','Entendo, vamos resolver juntos!','Como você está se sentindo com isso?','Já buscou algum tratamento antes?','Me conta um pouco mais da sua rotina','O que mais te incomoda nisso?'],
+    ['Vou fazer uma avaliação completa','Preciso entender melhor seu caso','Você já fez tratamento antes?','Vou verificar no exame clínico','Preciso de alguns exames para confirmar','Esse quadro tem quanto tempo exato?','Sente dor em algum momento?','Tem histórico familiar relacionado?'],
+    ['Tenho uma ótima opção para você','Deixa eu explicar como funciona','Os resultados são excelentes','Vou te mostrar as possibilidades','Esse tratamento tem alta taxa de sucesso','Posso te mostrar casos similares','O protocolo que usamos é o mais moderno','Isso vai resolver definitivamente'],
+    ['Esse é o melhor investimento','Posso facilitar para você','Quando podemos agendar?','Vamos dar o próximo passo?','Temos condições especiais agora','Posso verificar a agenda hoje mesmo','Qual seria o melhor dia para você?','Esse valor inclui toda a garantia'],
+  ];
+  const list = (qrByStage[stage] || qrByStage[0]);
+  const shuffled = list.slice().sort(() => Math.random() - 0.5).slice(0, 4);
+  return `<div class="quick-replies">${shuffled.map(q => `<div class="qr" onclick="sendQuick('aval',\`${q}\`)">${q}</div>`).join('')}</div>`;
+}
+
+
+function showTreatmentOptions(ctx) {
+  const s = state[ctx];
+  if (!s.scenario.treatments) return;
+  let wrap = document.getElementById(`treat-wrap-${ctx}`);
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = `treat-wrap-${ctx}`;
+    wrap.className = 'bottom-area';
+    wrap.style.paddingTop = '8px';
+    const chatArea = document.getElementById(`chat-${ctx}`);
+    const inputEl = document.getElementById(`msgInput-${ctx}`)?.closest('.bottom-area');
+    if (inputEl) chatArea.insertBefore(wrap, inputEl);
+    else chatArea.appendChild(wrap);
+  }
+  wrap.innerHTML = `
+    <div class="eval-opts-label">Apresentar opção de tratamento</div>
+    <div class="eval-opts-row" id="treat-opts-${ctx}">
+      ${s.scenario.treatments.map(t => `<div class="topt" onclick="selectTreatment(this,'${ctx}')">${t}</div>`).join('')}
+    </div>`;
+  wrap.style.display = '';
+}
+
+function hideTreatmentOptions(ctx) {
+  const wrap = document.getElementById(`treat-wrap-${ctx}`);
+  if (wrap) wrap.style.display = 'none';
+}
+
+function checkStageProgress(ctx) {
+  if (ctx !== 'aval') return;
+  const s = state[ctx];
+  s.stageMsgs++;
+  updateStageBanner(ctx);
+  const MSGS_PER_STAGE = 4;
+  // Auto-advance stage every 4 messages
+  if (s.stageMsgs >= MSGS_PER_STAGE) {
+    if (s.stage < AVAL_STAGES.length - 1) {
+      s.stage++;
+      s.stageMsgs = 0;
+      renderStepper(ctx);
+      updateStageBanner(ctx);
+      const qrWrap = document.getElementById(`qr-wrap-${ctx}`);
+      if (qrWrap) qrWrap.innerHTML = getStageQuickReplies(ctx);
+      if (s.stage === 2) showTreatmentOptions(ctx);
+      else hideTreatmentOptions(ctx);
+      addSystemMsg(ctx, `${AVAL_STAGES[s.stage].icon} ${AVAL_STAGES[s.stage].label}`);
+    } else {
+      // Last stage complete → show score
+      setTimeout(() => showScore(ctx), 1400);
+    }
+  }
+}
+
+function triggerResponse(ctx) {
+  const s = state[ctx];
+  s.msgCount++;
+  checkStageProgress(ctx);
+  const queue = responseQueue[ctx];
+  if (ctx === 'aval') {
+    const stageExtras = [
+      { // Conexão
+        analitico:['🎧 Tem muito tempo que sinto isso.','🎧 O que exatamente você vai avaliar?','🎧 Já fui em outro lugar mas não gostei do atendimento.','🎧 Preciso entender o que está acontecendo.'],
+        planejador:['🎧 Quando isso começou a piorar?','🎧 Vim porque precisava de uma solução definitiva.','🎧 Quero entender tudo antes de decidir qualquer coisa.','🎧 Já pesquisei bastante sobre isso.'],
+        comunicador:['🎧 Ah que bom! Espero que você me ajude.','🎧 Estou um pouco nervosa, mas confiante.','🎧 Minha amiga me indicou muito essa clínica!','🎧 Estou bem ansiosa, mas sei que preciso resolver.'],
+        executor:['🎧 Direto ao ponto, o que precisa ser feito?','🎧 Sem rodeios, me fala o problema.','🎧 Quero resolver isso o quanto antes.','🎧 Já sei o que tenho, só quero saber como resolver.']
+      },
+      { // Diagnóstico
+        analitico:['🎧 Quais exames exatamente você recomenda?','🎧 Me explica o motivo de cada etapa.','🎧 Quais são os riscos se eu não tratar?','🎧 Tem alguma evidência científica sobre isso?'],
+        planejador:['🎧 O que esse diagnóstico implica para mim?','🎧 Quanto tempo vai levar no total?','🎧 Preciso de quanto tempo de recuperação?','🎧 O que acontece se eu adiar o tratamento?'],
+        comunicador:['🎧 Minha amiga passou por isso também!','🎧 Você acha que vai resolver de vez?','🎧 Tenho medo que doa muito...','🎧 Confia que vai dar certo? Me tranquiliza.'],
+        executor:['🎧 Já entendi, o que fazemos?','🎧 Qual é o próximo passo prático?','🎧 Quanto tempo isso vai me tirar do trabalho?','🎧 É urgente ou posso esperar um pouco?']
+      },
+      { // Tratamento
+        analitico:['🎧 Qual a taxa de sucesso desse tratamento?','🎧 Quero dados antes de decidir.','🎧 Quais são as contraindicações?','🎧 Tem alguma alternativa mais conservadora?'],
+        planejador:['🎧 Tem como me explicar cada etapa do tratamento?','🎧 Posso ter isso por escrito?','🎧 Quantas consultas serão necessárias?','🎧 Qual o prazo total para concluir?'],
+        comunicador:['🎧 Parece ótimo! Me conta mais.','🎧 Isso vai mudar minha vida!','🎧 Tenho visto resultados lindos nas redes sociais!','🎧 Posso ver fotos de resultados?'],
+        executor:['🎧 Qual opção tem resultado mais rápido?','🎧 Pode me mostrar casos anteriores?','🎧 Quanto tempo fica o resultado?','🎧 Tem algum jeito de acelerar o processo?']
+      },
+      { // Negociação
+        analitico:['🎧 Tem como me enviar um orçamento detalhado?','🎧 Quero comparar antes de decidir.','🎧 Qual o custo-benefício real disso?','🎧 O que está incluso nesse valor exatamente?'],
+        planejador:['🎧 Posso ter um plano por escrito?','🎧 Qual seria a forma de pagamento?','🎧 Posso parcelar em quantas vezes?','🎧 Tem algum desconto para pagamento à vista?'],
+        comunicador:['🎧 Quero muito fazer! Mas preciso falar com meu marido.','🎧 Vocês me dão algum desconto?','🎧 Se eu indicar alguém tem algum benefício?','🎧 Posso começar logo que fechar?'],
+        executor:['🎧 Quando consigo começar?','🎧 Fecha negócio comigo agora!','🎧 Qual a opção mais rápida para iniciar?','🎧 Tem vaga essa semana?']
+      }
+    ];
+    const byProfile = stageExtras[s.stage] || stageExtras[0];
+    const allOpts = byProfile[s.profile.id] || ['🎧 Entendo...','🎧 Me conta mais.','🎧 E o que fazemos agora?','🎧 Certo, pode continuar.'];
+    const available = allOpts.filter(o => !s.usedResponses.includes(o));
+    const pool = available.length > 0 ? available : allOpts; // reset if exhausted
+    const chosen = pool[Math.floor(Math.random()*pool.length)];
+    s.usedResponses.push(chosen);
+    setTimeout(() => addPatientMsg(ctx, chosen), 900);
+  } else if (queue.length > 0) {
+    setTimeout(() => addPatientMsg(ctx, queue.shift()), 900);
+  } else if (s.msgCount >= 5) {
+    setTimeout(() => showScore(ctx), 1400);
+  } else {
+    const extras = {
+      analitico:['🎧 Preciso de mais dados antes de decidir.','🎧 Quais são exatamente as especificações?','🎧 Tem comparativo com outras clínicas?','🎧 Me manda isso por escrito para analisar.','🎧 Qual a garantia que acompanha?','🎧 Quero entender cada item do orçamento.'],
+      planejador:['🎧 Quais seriam os próximos passos?','🎧 Posso ter isso por escrito?','🎧 Em quantas vezes posso parcelar?','🎧 Qual o cronograma do tratamento?','🎧 Preciso planejar minha agenda para isso.','🎧 Me dá um prazo para pensar?'],
+      comunicador:['🎧 Você acha que é a melhor opção pra mim?','🎧 Posso trazer meu marido numa próxima?','🎧 Minha amiga pagou bem menos em outro lugar...','🎧 Me convence um pouco mais?','🎧 Tenho medo de me arrepender.','🎧 Vocês cuidam bem dos pacientes aqui?'],
+      executor:['🎧 Quando posso começar?','🎧 Isso vai demorar quanto no total?','🎧 Qual o jeito mais rápido de resolver?','🎧 Tem vaga essa semana?','🎧 Pode me dar um desconto pra fechar agora?','🎧 Preciso de uma decisão rápida aqui.']
+    };
+    const allOpts = extras[s.profile.id] || ['🎧 Entendo...','🎧 Me explica melhor.','🎧 E o que mais?','🎧 Pode repetir?'];
+    const available = allOpts.filter(o => !s.usedResponses.includes(o));
+    const pool = available.length > 0 ? available : allOpts;
+    const chosen = pool[Math.floor(Math.random()*pool.length)];
+    s.usedResponses.push(chosen);
+    setTimeout(() => addPatientMsg(ctx, chosen), 900);
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   SCORING
+═══════════════════════════════════════════════════ */
+function scoreMsg(ctx, text, isTreatment) {
+  const s = state[ctx];
+  const t = text.toLowerCase();
+  if (ctx === 'aval') {
+    const stage = s.stage;
+    if (stage === 0) { // Conexão
+      if (/entend|preocup|sinto|imagin|como posso|ajudar|conte|ouço|olá|bem-vind/i.test(t)) s.score.conexao = cap(s.score.conexao + 3);
+      if (/quanto tempo|quando começou|há quanto|história|me conta/i.test(t)) s.score.conexao = cap(s.score.conexao + 2);
+    } else if (stage === 1) { // Diagnóstico
+      if (/avali|exame|tomografia|radiografia|verificar|clínico|diagnóstico|investigar/i.test(t)) s.score.diagnostico = cap(s.score.diagnostico + 3);
+      if (/tratamento anterior|já fez|histórico|dor|sensibili|sintoma/i.test(t)) s.score.diagnostico = cap(s.score.diagnostico + 2);
+    } else if (stage === 2) { // Tratamento
+      if (/tratamento|solução|opção|procedimento|indicação|protocolo|técnica/i.test(t)) s.score.tratamento = cap(s.score.tratamento + 2.5);
+      if (/implante|canal|prótese|clareamento|ortodontia|enxerto|coroa|restauração/i.test(t)) s.score.tratamento = cap(s.score.tratamento + 2);
+      if (isTreatment) s.score.tratamento = cap(s.score.tratamento + 3.5);
+    } else if (stage === 3) { // Negociação
+      if (/valor|investi|parcel|forma de pag|condição|facilitar|entrada/i.test(t)) s.score.negociacao = cap(s.score.negociacao + 2.5);
+      if (/agenda|marcar|começar|próxima|data|agendar|fechar/i.test(t)) s.score.negociacao = cap(s.score.negociacao + 3);
+      if (/qualidade|resultado|garantia|diferencial|custo-benefício/i.test(t)) s.score.negociacao = cap(s.score.negociacao + 2);
+    }
+  } else {
+    if (/entend|imagin|faz sentido|preocup|compreend/i.test(t)) s.score.rapport = cap(s.score.rapport + 2.5);
+    if (/qualidade|diferencial|garantia|equipe|material|resultado/i.test(t)) s.score.argumentacao = cap(s.score.argumentacao + 2.5);
+    if (/parcel|facilitar|condição|forma|pagamento|entrada|opção/i.test(t)) s.score.contorno = cap(s.score.contorno + 2.5);
+    if (/fechar|agenda|avançar|decidir|começar|hoje/i.test(t)) s.score.fechamento = cap(s.score.fechamento + 2.5);
+  }
+}
+
+function cap(v){ return Math.min(10, v); }
+
+/* ═══════════════════════════════════════════════════
+   SHOW SCORE
+═══════════════════════════════════════════════════ */
+function showScore(ctx) {
+  lastCtx = ctx;
+  const s = state[ctx];
+  const keys = Object.keys(s.score);
+  const raw = keys.reduce((a,k) => a + s.score[k], 0) / keys.length;
+  const final = Math.min(10, Math.max(1, parseFloat((raw + (Math.random()*.8 - .1)).toFixed(1))));
+
+  const labels = {
+    conexao:'1. Conexão com o paciente',
+    diagnostico:'2. Diagnóstico clínico',
+    tratamento:'3. Apresentação do tratamento',
+    negociacao:'4. Negociação e fechamento',
+    rapport:'Conexão com o paciente',
+    argumentacao:'Argumentação de valor',
+    contorno:'Contorno de objeções',
+    fechamento:'Encaminhamento / Fechamento'
+  };
+
+  // Revealed scenario
+  const diffLabel = {facil:'Fácil',medio:'Médio',dificil:'Difícil'}[s.scenario.difficulty];
+  const diffColor = {facil:'var(--verde)',medio:'var(--amarelo)',dificil:'#ef4444'}[s.scenario.difficulty];
+  document.getElementById('revealedScenario').innerHTML = `
+    <div class="rs-icon">🎲</div>
+    <div class="rs-info">
+      <div class="rs-label">Cenário sorteado</div>
+      <div class="rs-name">${s.scenario.title}</div>
+      <div class="rs-diff" style="color:${diffColor}">● ${diffLabel}</div>
+    </div>`;
+
+  // Revealed profile
+  document.getElementById('revealedProfile').innerHTML = `
+    <div class="rp-icon">${s.profile.icon}</div>
+    <div class="rp-info">
+      <div class="rp-label">Perfil revelado</div>
+      <div class="rp-name">${s.profile.name} · ${s.profile.type}</div>
+      <div class="rp-desc">${s.profile.desc}</div>
+    </div>`;
+
+  const scoreNumEl = document.getElementById('scoreNum');
+  scoreNumEl.textContent = final.toFixed(1);
+  const scoreColor = final >= 8.5 ? 'var(--verde)' : final >= 7 ? 'var(--amarelo)' : final >= 5 ? '#f97316' : '#ef4444';
+  scoreNumEl.style.color = scoreColor;
+  document.querySelector('.score-grade').style.borderColor = scoreColor;
+  document.getElementById('scoreTitle').textContent = `Parabéns, ${currentUser.name}!`;
+  document.getElementById('scoreSubtitle').textContent = `${ctx === 'aval' ? 'Avaliação Clínica' : 'Abordagem Comercial'} · ${currentUser.name}`;
+
+  // Score items
+  const itemsEl = document.getElementById('scoreItems');
+  const itemScores = {};
+  itemsEl.innerHTML = keys.map(k => {
+    const v = parseFloat(Math.min(10, s.score[k] + Math.random()*.8 + .2).toFixed(1));
+    itemScores[k] = v;
+    const pct = (v/10)*100;
+    const barGrad = v >= 8 ? 'linear-gradient(90deg,#16a34a,#22c55e)' : v >= 6 ? 'linear-gradient(90deg,#d97706,#f59e0b)' : v >= 4 ? 'linear-gradient(90deg,#ea580c,#f97316)' : 'linear-gradient(90deg,#dc2626,#ef4444)';
+    const valColor = v >= 8 ? '#22c55e' : v >= 6 ? '#f59e0b' : v >= 4 ? '#f97316' : '#ef4444';
+    return `<div class="score-item">
+      <span class="score-item-name">${labels[k]||k}</span>
+      <div class="score-item-pts">
+        <div class="score-item-bar"><div class="score-item-fill" id="bar-${k}" data-grad="${barGrad}" style="width:0%"></div></div>
+        <span style="font-size:.77rem;font-weight:600;color:${valColor};min-width:28px;text-align:right">${v.toFixed(1)}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Animate bars after render
+  setTimeout(() => {
+    keys.forEach(k => {
+      const el = document.getElementById(`bar-${k}`);
+      if (el) {
+        el.style.width = (itemScores[k]/10*100) + '%';
+        el.style.background = el.dataset.grad || 'linear-gradient(90deg,var(--vinho-c),var(--cobre))';
+      }
+    });
+  }, 80);
+
+  // Improvement tips
+  const tipsEl = document.getElementById('improveTips');
+  const profileTips = s.profile.tips[ctx];
+  const sorted = keys.sort((a,b) => (itemScores[a]||0) - (itemScores[b]||0));
+
+  let tipsHtml = '';
+  sorted.forEach((k, i) => {
+    const v = itemScores[k] || 0;
+    const tip = profileTips[k];
+    if (!tip) return;
+    if (v >= 7.5) {
+      tipsHtml += `<div class="improve-item tip-great"><strong>✅ ${labels[k]} — Ponto forte!</strong>${tip}</div>`;
+    } else {
+      tipsHtml += `<div class="improve-item"><strong>⚠️ ${labels[k]} — ${v < 4 ? 'Precisa de atenção' : 'Pode melhorar'}</strong>${tip}</div>`;
+    }
+  });
+  tipsEl.innerHTML = tipsHtml;
+
+  // Comment
+  let comment;
+  if (final >= 8.5) comment = '🌟 Desempenho excelente! Você soube adaptar a comunicação ao perfil do paciente com naturalidade. Continue assim!';
+  else if (final >= 7) comment = '👍 Bom atendimento! Revise os pontos de melhoria acima e pratique especialmente o encaminhamento para ação concreta.';
+  else if (final >= 5) comment = '💪 Você está no caminho certo! Foque em criar conexão antes de apresentar soluções, e em conduzir para um próximo passo claro.';
+  else comment = '📚 Treinamento importante! Leia as dicas de cada critério e pratique o cenário novamente. Cada tentativa te deixa mais preparada!';
+
+  document.getElementById('scoreComment').textContent = comment;
+  document.getElementById('scoreOverlay').classList.add('show');
+
+  // Salva nota no histórico do dia
+  saveScore({
+    ctx,
+    user: currentUser.name,
+    scenario: s.scenario.title,
+    profile: s.profile.name,
+    final,
+    scores: itemScores,
+    ts: Date.now()
+  });
+  renderHistory();
+}
+
+function retrySession() {
+  closeScore();
+  setTimeout(() => startSession(lastCtx), 150);
+}
+function closeScore() {
+  document.getElementById('scoreOverlay').classList.remove('show');
+}
+
+/* ═══════════════════════════════════════════════════
+   AUDIO SIMULATION
+═══════════════════════════════════════════════════ */
+function makeWave() {
+  let h = '';
+  for (let i = 0; i < 22; i++) h += `<div class="wave-bar" style="height:${rnd(4,20)}px"></div>`;
+  return h;
+}
+
+function playAudio(btn) {
+  if (audioPlaying === btn) { stopAudio(); return; }
+  if (audioPlaying) stopAudio();
+  audioPlaying = btn;
+  btn.textContent = '⏸';
+  const bars = btn.nextElementSibling.querySelectorAll('.wave-bar');
+  const dur = parseInt(btn.parentElement.querySelector('.audio-dur').textContent) * 1000;
+  audioInterval = setInterval(() => bars.forEach(b => b.style.height = rnd(4,20)+'px'), 140);
+  setTimeout(stopAudio, dur);
+}
+
+function stopAudio() {
+  if (audioInterval) clearInterval(audioInterval);
+  if (audioPlaying) { audioPlaying.textContent = '▶'; audioPlaying = null; }
+  audioInterval = null;
+}
+
+/* ═══════════════════════════════════════════════════
+   SPEECH RECOGNITION (microfone → texto)
+═══════════════════════════════════════════════════ */
+let recognition = null;
+let micCtx = null;
+let micActive = false;
+
+function toggleMic(ctx) {
+  if (micActive) {
+    stopMic();
+    return;
+  }
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    setMicStatus(ctx, '⚠️ Seu navegador não suporta reconhecimento de voz. Use Chrome.');
+    return;
+  }
+
+  micCtx = ctx;
+  micActive = true;
+
+  recognition = new SpeechRecognition();
+  recognition.lang = 'pt-BR';
+  recognition.continuous = true;
+  recognition.interimResults = true;
+
+  const btn = document.getElementById(`mic-btn-${ctx}`);
+  const input = document.getElementById('msgInput-' + ctx);
+  btn.classList.add('recording');
+  btn.textContent = '⏹️';
+  setMicStatus(ctx, '🔴 Gravando... fale sua resposta');
+
+  let finalTranscript = '';
+
+  recognition.onresult = (e) => {
+    let interim = '';
+    finalTranscript = '';
+    for (let i = 0; i < e.results.length; i++) {
+      if (e.results[i].isFinal) {
+        finalTranscript += e.results[i][0].transcript;
+      } else {
+        interim += e.results[i][0].transcript;
+      }
+    }
+    input.value = finalTranscript || interim;
+    autoResize(input);
+  };
+
+  recognition.onerror = (e) => {
+    if (e.error === 'not-allowed') {
+      setMicStatus(ctx, '⚠️ Permissão de microfone negada. Libere nas configurações do navegador.');
+    } else if (e.error !== 'no-speech') {
+      setMicStatus(ctx, `⚠️ Erro: ${e.error}`);
+    }
+    stopMic();
+  };
+
+  recognition.onend = () => {
+    if (micActive) {
+      // auto-send if has content
+      const input = document.getElementById('msgInput-' + ctx);
+      if (input && input.value.trim()) {
+        setTimeout(() => {
+          setMicStatus(ctx, '✅ Transcrito! Enviando...');
+          setTimeout(() => {
+            sendMsg(ctx);
+            setMicStatus(ctx, '');
+          }, 600);
+        }, 200);
+      }
+      stopMic(false);
+    }
+  };
+
+  recognition.start();
+}
+
+function stopMic(clearStatus = true) {
+  micActive = false;
+  if (recognition) {
+    try { recognition.stop(); } catch(e){}
+    recognition = null;
+  }
+  if (micCtx) {
+    const btn = document.getElementById(`mic-btn-${micCtx}`);
+    if (btn) { btn.classList.remove('recording'); btn.textContent = '🎙️'; }
+    if (clearStatus) setMicStatus(micCtx, '');
+  }
+  micCtx = null;
+}
+
+function setMicStatus(ctx, msg) {
+  const el = document.getElementById(`mic-status-${ctx}`);
+  if (el) el.textContent = msg;
+}
+
+/* ═══════════════════════════════════════════════════
+   UTILS
+═══════════════════════════════════════════════════ */
+function scrollBottom(ctx) {
+  const el = document.getElementById(`msgs-${ctx}`);
+  if (el) el.scrollTop = el.scrollHeight;
+}
+function now() {
+  return new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+}
+function rnd(a,b){ return Math.floor(Math.random()*(b-a)+a); }
+function handleKey(e,ctx){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg(ctx);} }
+function autoResize(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,90)+'px'; }
+
+/* ═══════════════════════════════════════════════════
+   HISTÓRICO DE NOTAS
+═══════════════════════════════════════════════════ */
+function todayKey() {
+  const d = new Date();
+  return d.toISOString().slice(0,10); // YYYY-MM-DD
+}
+
+function saveScore(entry) {
+  const key = 'athena_scores_' + todayKey();
+  const all = JSON.parse(localStorage.getItem(key) || '[]');
+  all.push(entry);
+  localStorage.setItem(key, JSON.stringify(all));
+}
+
+function loadTodayScores() {
+  const key = 'athena_scores_' + todayKey();
+  return JSON.parse(localStorage.getItem(key) || '[]');
+}
+
+function renderHistory() {
+  const el = document.getElementById('historyList');
+  const elCom = document.getElementById('historyListCom');
+  const scores = loadTodayScores();
+  const ctxLabel = { aval:'Clínica', com:'Comercial' };
+  const gradeColor = v => v >= 8 ? 'var(--verde)' : v >= 6 ? 'var(--amarelo)' : '#ef4444';
+  const emptyMsg = '<div style="color:#bbb;font-size:.78rem;text-align:center;padding:16px 0">Nenhuma simulação hoje ainda.</div>';
+  const listHtml = scores.length === 0 ? emptyMsg : scores.slice().reverse().map(s => `
+    <div style="background:#fff;border:1px solid var(--blush);border-left:3px solid ${gradeColor(s.final)};border-radius:0 10px 10px 0;padding:10px 14px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:.78rem;font-weight:600;color:var(--vinho)">${s.user}</div>
+        <div style="font-size:1rem;font-weight:700;color:${gradeColor(s.final)}">${s.final.toFixed(1)}</div>
+      </div>
+      <div style="font-size:.72rem;color:var(--moka);margin-top:3px">${ctxLabel[s.ctx]||s.ctx} · ${s.scenario}</div>
+      <div style="font-size:.7rem;color:#aaa;margin-top:2px">${s.profile} · ${new Date(s.ts).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</div>
+    </div>
+  `).join('');
+  if (el) el.innerHTML = listHtml;
+  if (elCom) elCom.innerHTML = listHtml;
+}
+</script>
+</body>
+</html>
